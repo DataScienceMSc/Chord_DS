@@ -1,7 +1,7 @@
 import argparse
 
-def findMaxNodes():
-
+def findMaxNodesPossible():
+    pass
 
 
 
@@ -14,7 +14,7 @@ def generateRandomIpsAndPorts(N):
     #Should also check that the random ips are unique
 
     NodeList=[]
-    findClosestPower(N)
+    findMaxNodesPossible(N)
 
 
 

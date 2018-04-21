@@ -11,7 +11,19 @@ def findMaxNodesPossible(N):
         if maxNodes >= N:
             return maxNodes
 
-
+#valia opoia sunartisi exei mesa klaseis den exei testaristei opws h parakatw :p
+def assignFileToNode(fileIdsList, aliveNodes):
+    for f in fileIdsList:
+        if f in aliveNodes:
+            f.fileList.append(f)
+        else:
+            for node in aliveNodes:
+                if f > aliveNodes[-1]:
+                    aliveNodes[0].fileList.append[f]
+                    break
+                if node > f:
+                    node.fileList.append(f)
+                    break
 
 def generateRandomIPsAndPorts(N):
     #given the number of nodes needed for the DS
@@ -40,8 +52,9 @@ def generateRandomIPsAndPorts(N):
                     break
             if not exists:
                 break
-        nodeId=int(hashlib.sha1(ip+port).hexdigest(),16) %maxNodes
+        nodeId=int(hashlib.sha1(ip+port).hexdigest(),16) %(maxNodes-1)
         nodeList.append([nodeId,ip,port])
+        print nodeList
     return nodeList
 
 
@@ -52,36 +65,82 @@ class node(object):
         self.port=lst[2]
         self.inQueue=[]
         self.fingerTable=[]
+        self.fileList=[]
 
 
-    def isFileStoredLocally(requestId):
+    def isFileStoredLocally(requestId, fileList):
         #this method should check if the current node contains the
         #file asked
         #returns true,false
-        pass
+        if requestId in fileList:
+            return True
+        else:
+            return False
 
-    def readFromQueue():
+    def readFromQueue(inQueue):
         #When it is the turn for the node to handle (send and receive) requests
         #this function should check what is present in the nodes incoming Queue( the queue containing the
-        #requests that were written from others in the nodes "shared memory"
-        pass
+        #requests that were written from others in the nodes "shared memory")
+        if not inQueue.empty():
+            fileToAsk = inQueue.get()
+            return fileToAsk
+        else:
+            return -1
 
-    def requestFile():
+    def requestFile(f, node):
         #this function will be used after a node has:
         #---received a request
         #---searched it has the file requested
         #---if the file is not stored loccaly
         #    ---find the most suitable node to pass the request
         #    ---send the request to the node found above
-        pass
+        if isFileStoredLocally(f, node.fileList):
+            return node.nodeId
+        else:
+            nextRequestedNode = findNextNode(f, node.fingertable)
+            requestFile(f, nextRequestedNode)
 
-    def findNextNode(f):
-        #given the requested file (id), find the best node to pass the request
-        #if file is not stored locally
-        pass
+#valia den eimai sigouri oti prepei na mpei mesa stin klasi
+    def findNextNode(f, fingerTable, m):
+    #given the requested file (id), find the best node to pass the request
+    #if file is not stored locally
+        while f > (pow(2, m) - 1):
+            f -= pow(2, m) - 1
+        
+        if f in fingerTable:
+            nextNode = f
+        else:        
+            for node in fingerTable:
+                if f > aliveNodes[-1]:
+                    nextNode = aliveNodes[0]
+                    break
+                if node > f:
+                    nextNode = node
+                    break
+        return nextNode
 
-    def updateFingerTable():
-        pass
+    def updateFingerTable(fingerTable, m, aliveNodes, nid):
+        for i in range (m):
+            fingerNode = pow(2,i) + nid
+        
+            while fingerNode > (pow(2, m) - 1):
+                fingerNode -= pow(2, m) - 1
+            
+            if fingerNode in aliveNodes:
+                fingerTable.append(fingerNode)
+           
+            else:
+                for j in aliveNodes:
+                    print 'j=', j
+                    if aliveNodes[-1] < fingerNode:
+                        fingerTable.append(aliveNodes[0])
+                        break
+                    if j > fingerNode:
+                        fingerTable.append(j)
+                        break
+                    
+        return fingerTable
+      
 
 
 #executing script using --->python Chord.py --N <number>
@@ -92,8 +151,8 @@ parser.add_argument("--N","--n", type=int, help="Number of nodes present in the 
 args=parser.parse_args()
 print "given N: ", args.N
 
-randomIpsAndPorts=generateRandomIPsAndPorts(args.N)
-
+randomIpsAndPorts=generateRandomIPsAndPorts(args.N -1)
+print randomIpsAndPorts
 nodeList=[]
 for i in randomIpsAndPorts:
     nodeList.append(node(i))

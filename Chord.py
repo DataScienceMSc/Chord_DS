@@ -87,12 +87,11 @@ class node(object):
 #executing script using --->python Chord.py --N <number>
 #if --N ... is not given, Chord DS will be initialized uning 10 nodes by default
 
-
-
 parser=argparse.ArgumentParser("Please give number of nodes for the Chord system:")
 parser.add_argument("--N","--n", type=int, help="Number of nodes present in the distributed system", default=10)
 args=parser.parse_args()
 print "given N: ", args.N
+
 randomIpsAndPorts=generateRandomIPsAndPorts(args.N)
 
 nodeList=[]

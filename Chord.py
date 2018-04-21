@@ -1,11 +1,19 @@
 import argparse
-
-def findMaxNodesPossible():
-    pass
-
+from random import randrange
+import hashlib
 
 
-def generateRandomIpsAndPorts(N):
+
+def findMaxNodesPossible(N):
+    maxNodes=1
+    while True:
+        maxNodes= maxNodes*2
+        if maxNodes >= N:
+            return maxNodes
+
+
+
+def generateRandomIPsAndPorts(N):
     #given the number of nodes needed for the DS
     #return a list of [nodeId, ip, port]
     #orderd based on nodeId, where:
@@ -13,16 +21,37 @@ def generateRandomIpsAndPorts(N):
     #nodeId is the result when hashing id+port (concatenation)
     #Should also check that the random ips are unique
 
-    NodeList=[]
-    findMaxNodesPossible(N)
+    nodeList=[]
+    maxNodes=findMaxNodesPossible(N)
 
+    print "Maximum possible nodes: ", maxNodes
+
+    for i in range(N):
+        port=str(randrange(0,9))+str(randrange(0,9))+str(randrange(0,9))+str(randrange(0,9))
+
+        while True:
+            exists=0
+
+            ip=str(randrange(1,256)) + "." + str(randrange(1,256)) + "." + str(randrange(1,256)) + "." + str(randrange(1,256))
+
+            for i in nodeList:
+                if ip == i[0]:
+                    exist=1
+                    break
+            if not exists:
+                break
+        nodeId=int(hashlib.sha1(ip+port).hexdigest(),16) %maxNodes
+        nodeList.append([nodeId,ip,port])
+    return nodeList
 
 
 class node(object):
-    def init(self,id):
-        nodeId=id
-        inQueue=[]
-        fingerTable=[]
+    def __init__(self,lst):
+        self.nodeId=lst[0]
+        self.ip=lst[1]
+        self.port=lst[2]
+        self.inQueue=[]
+        self.fingerTable=[]
 
 
     def isFileStoredLocally(requestId):
@@ -63,5 +92,13 @@ class node(object):
 parser=argparse.ArgumentParser("Please give number of nodes for the Chord system:")
 parser.add_argument("--N","--n", type=int, help="Number of nodes present in the distributed system", default=10)
 args=parser.parse_args()
+print "given N: ", args.N
+randomIpsAndPorts=generateRandomIPsAndPorts(args.N)
 
-createRandomIPs(args.N)
+nodeList=[]
+for i in randomIpsAndPorts:
+    nodeList.append(node(i))
+
+for i in nodeList:
+    print "Generated Node: " + str(i.nodeId) + "---->" + str(i.ip) +":" +str(i.port)
+

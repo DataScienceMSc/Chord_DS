@@ -1,13 +1,14 @@
 import argparse
 from random import randrange
+from random import choice
 import hashlib
 import operator
 import numpy as np
 
 
-*************************************************************************************************
-**********************************GENERIC FUNCTIONS**********************************************
-*************************************************************************************************
+#*************************************************************************************************
+#**********************************GENERIC FUNCTIONS**********************************************
+#*************************************************************************************************
 
 def randomNodeGenerator(N,maxNodes):
     randomIpsAndPorts=generateRandomIPsAndPorts(N,maxNodes)
@@ -68,9 +69,9 @@ def generateRandomIPsAndPorts(N,maxNodes):
     nodeList.sort(key=lambda x:x[0])
     return nodeList
 
-*************************************************************************************************
-**********************************CHORD FUNCTIONS************************************************
-*************************************************************************************************
+#*************************************************************************************************
+#**********************************CHORD FUNCTIONS************************************************
+#*************************************************************************************************
 
 class Chord(object):
     def __init__(self, N):
@@ -80,8 +81,11 @@ class Chord(object):
 	self.aliveNodes=[i.getNodeId() for i in self.nodeList]
 
 	for i in self.nodeList:
-    		print "Node: " + str(i.getNodeId()) + "with predecessor: " + str(i.getPredecessor())
+    		print "Node: " + str(i.getNodeId()) + " with predecessor: " + str(i.getPredecessor())
 
+
+    def getAliveNodes(self):
+        return self.aliveNodes
 
 
     def assignFilesToNodes(self,fileIdsList):
@@ -89,34 +93,35 @@ class Chord(object):
 
 	for f in fileIdsList:
             for node in self.nodeList:
-                if str(f) == str(node.getNodeId()):
-                    node.storeFileToNode(str(f))
+                if f == node.getNodeId():
+                    node.storeFileToNode(f)
                     break
                 else:
                     if node.getNodeId() > f:
-                        node.storeFileToNode(str(f))
+                        node.storeFileToNode(f)
                         break
-
 
 
     def findNextNode(self, f, current):
       #given the requested file (id), find the best node to pass the request
        #if file is not stored locally
 
-        while f > (pow(2, m) - 1):
-            f -= pow(2, m) - 1
+        while f > (pow(2, self.m) - 1):
+            f -= pow(2, self.m) - 1
 
-        if f in current.getFingerTable():
-            nextNode =f
-        else:
-            for node in current.getFingerTable():
-                if f > self.aliveNodes[-1]:
-                    nextNode = self.aliveNodes[0]
-                    break
-                if node > f:
-                    nextNode = node
-                    break
-        return nextNode
+        currentFingerTable=current.getFingerTable()
+        print currentFingerTable
+#        if f in current.getFingerTable():
+#            nextNode =f
+#        else:
+#            for node in current.getFingerTable():
+#                if f > self.aliveNodes[-1]:
+#                    nextNode = self.aliveNodes[0]
+#                    break
+#                if node > f:
+#                    nextNode = node
+#                    break
+#        return nextNode
 
 
     def requestFile(self, f, node):
@@ -126,23 +131,26 @@ class Chord(object):
         #---if the file is not stored loccaly
         #    ---find the most suitable node to pass the request
         #    ---send the request to the node found above
-        for i in self.nodeList:
-            if i.getNodeId()==node:
-                currentNode=i
+        i=0
+        currentNode=self.nodeList[i]
+        while currentNode.getNodeId()!= node:
+                i+=1
+                currentNode=self.nodeList[i]
 
         if currentNode.isFileStoredLocally(f):
             return currentNode
         else:
-            searchNext = findNextNode(f, currentNode)
-            return requestFile(f, searchNext)
+            searchNext = self.findNextNode(f, currentNode)
+            return self.requestFile(f, searchNext)
+
 
     def updateTables(self):
         for i in self.nodeList:
             i.updateFingerTable(self.m,self.aliveNodes)
 
-*************************************************************************************************
-**********************************NODE FUNCTIONS*************************************************
-*************************************************************************************************
+#*************************************************************************************************
+#**********************************NODE FUNCTIONS*************************************************
+#*************************************************************************************************
 
 class node(object):
     def __init__(self,lst,predecessor):
@@ -196,16 +204,16 @@ class node(object):
                 fingerNode -= pow(2, m) - 1
 
             if fingerNode in aliveNodes:
-                self.fingerTable.append(fingerNode)
+                self.fingerTable.append([self.nodeId+i,fingerNode])
 
             else:
                 for j in aliveNodes:
-                    print 'j=', j
+                    #print 'j=', j
                     if aliveNodes[-1] < fingerNode:
-                        self.fingerTable.append(aliveNodes[0])
+                        self.fingerTable.append([self.nodeId+i,aliveNodes[0]])
                         break
                     if j > fingerNode:
-                        self.fingerTable.append(j)
+                        self.fingerTable.append([self.nodeId+i,j])
                         break
 
 
@@ -225,7 +233,8 @@ fileIdsList = hashedFilesIds(filetxt, args.N -1)
 
 chord=Chord(args.N-1)
 chord.assignFilesToNodes(fileIdsList)
-
-
-for node in chord.nodeList:
-    print node.getFileList()
+chord.updateTables()
+print "requesting from node: " + str(choice(chord.getAliveNodes()))
+chord.requestFile(10,choice(chord.getAliveNodes()))
+#for node in chord.nodeList:
+#    print node.getFileList()

@@ -15,6 +15,8 @@ def findMaxNodesPossible(N):
             print "Chord with m=", m ,"and maximum possible nodes: ", maxNodes
             return [m,maxNodes]
 
+
+
 #valia opoia sunartisi exei mesa klaseis den exei testaristei opws h parakatw :p
 def assignFileToNode(fileIdsList, aliveNodes):
     #finds the node responsible for a fileId
@@ -35,12 +37,16 @@ def assignFileToNode(fileIdsList, aliveNodes):
                     #print f, node.nodeId, "else"
                     break
 
+
+
 def hashedFilesIds(filetxt, maxNodes):
     fileIdsList = []
     for row in filetxt:
         fileId=int(hashlib.sha1(row).hexdigest(),16) %(maxNodes-1)
         fileIdsList.append(fileId)
     return fileIdsList
+
+
 
 def findNextNode(f, fingerTable, m, aliveNodes):
 #given the requested file (id), find the best node to pass the request
@@ -59,6 +65,7 @@ def findNextNode(f, fingerTable, m, aliveNodes):
                 nextNode = node
                 break
     return nextNode
+
 
 
 def generateRandomIPsAndPorts(N,maxNodes):

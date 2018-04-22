@@ -1,6 +1,7 @@
 import argparse
 from random import randrange
 import hashlib
+import operator
 
 
 
@@ -13,17 +14,31 @@ def findMaxNodesPossible(N):
 
 #valia opoia sunartisi exei mesa klaseis den exei testaristei opws h parakatw :p
 def assignFileToNode(fileIdsList, aliveNodes):
+    #finds the node responsible for a fileId
     for f in fileIdsList:
-        if f in aliveNodes:
-            f.fileList.append(f)
-        else:
-            for node in aliveNodes:
-                if f > aliveNodes[-1]:
-                    aliveNodes[0].fileList.append[f]
+        #print "fileid", f
+        for node in aliveNodes:
+            if str(f) == str(node.nodeId):
+                node.fileList.append(str(f))
+                #print f, node.nodeId
+                break
+            else:
+                
+                #for node in aliveNodes:
+                    #if f > aliveNodes[-1].nodeId:
+                     #   aliveNodes[0].nodeId.fileList.append[f]
+                      #  break
+                if node.nodeId > f:
+                    node.fileList.append(str(f))
+                    #print f, node.nodeId, "else"
                     break
-                if node > f:
-                    node.fileList.append(f)
-                    break
+
+def hashedFilesIds(filetxt, maxNodes):
+    fileIdsList = []
+    for row in filetxt:
+        fileId=int(hashlib.sha1(row).hexdigest(),16) %(maxNodes-1)
+        fileIdsList.append(fileId)
+    return fileIdsList
 
 def generateRandomIPsAndPorts(N):
     #given the number of nodes needed for the DS
@@ -54,7 +69,7 @@ def generateRandomIPsAndPorts(N):
                 break
         nodeId=int(hashlib.sha1(ip+port).hexdigest(),16) %(maxNodes-1)
         nodeList.append([nodeId,ip,port])
-        print nodeList
+        
     return nodeList
 
 
@@ -151,12 +166,21 @@ parser.add_argument("--N","--n", type=int, help="Number of nodes present in the 
 args=parser.parse_args()
 print "given N: ", args.N
 
-randomIpsAndPorts=generateRandomIPsAndPorts(args.N -1)
+randomIpsAndPorts=generateRandomIPsAndPorts(args.N)
 print randomIpsAndPorts
 nodeList=[]
 for i in randomIpsAndPorts:
     nodeList.append(node(i))
 
+nodeList = sorted(nodeList, key=operator.attrgetter('nodeId'))
+
 for i in nodeList:
     print "Generated Node: " + str(i.nodeId) + "---->" + str(i.ip) +":" +str(i.port)
+
+filetxt = open("/home/mscuser/Downloads/filenamestest.txt", "r")
+fileIdsList = hashedFilesIds(filetxt, args.N -1)
+
+assignFileToNode(fileIdsList, nodeList)
+for node in nodeList:
+    print node.fileList
 

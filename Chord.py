@@ -110,18 +110,15 @@ class Chord(object):
             f -= pow(2, self.m) - 1
 
         currentFingerTable=current.getFingerTable()
-        print currentFingerTable
-#        if f in current.getFingerTable():
-#            nextNode =f
-#        else:
-#            for node in current.getFingerTable():
-#                if f > self.aliveNodes[-1]:
-#                    nextNode = self.aliveNodes[0]
-#                    break
-#                if node > f:
-#                    nextNode = node
-#                    break
-#        return nextNode
+        print "nodeid=", current.nodeId
+        print "FingerTable=", currentFingerTable
+        print "m=", self.m
+        for i in range(self.m-1, 0, -1):
+            if currentFingerTable[i][1] > current.nodeId and currentFingerTable[i][1] <= f:
+                print "next node to ask = ", currentFingerTable[i][1]
+                return currentFingerTable[i][1]
+        
+        return currentFingerTable[self.m-1][1]
 
 
     def requestFile(self, f, node):
@@ -136,12 +133,37 @@ class Chord(object):
         while currentNode.getNodeId()!= node:
                 i+=1
                 currentNode=self.nodeList[i]
-
         if currentNode.isFileStoredLocally(f):
             return currentNode
         else:
             searchNext = self.findNextNode(f, currentNode)
             return self.requestFile(f, searchNext)
+    
+    def lookup(self, f, node, maxiters):
+        #print "f=", f
+        maxiters+=1
+        
+        for i in self.nodeList:
+            if i.getNodeId() == node :
+                currentNode = i
+        print "currentNodeId", currentNode.nodeId
+
+        currentFingerTable = currentNode.getFingerTable()
+
+        if f > currentNode.nodeId and f <= currentFingerTable[0][1]:
+            successorLast = currentFingerTable[0][1]
+            print "responsibleNode=", successorLast
+            return successorLast
+        elif maxiters == 50:
+            return -1
+        else:
+            if not (currentNode.isFileStoredLocally(f)):
+                nextNode = self.findNextNode(f, currentNode)
+                #print "nextNode looking in =", nextNode
+                result = self.lookup(f, nextNode, maxiters)
+                return result
+            else:
+                return nextNode
 
 
     def updateTables(self):
@@ -199,21 +221,20 @@ class node(object):
     def updateFingerTable(self, m, aliveNodes):
         for i in range (m):
             fingerNode = pow(2,i) + self.nodeId
-
+            
             while fingerNode > (pow(2, m) - 1):
                 fingerNode -= pow(2, m) - 1
 
             if fingerNode in aliveNodes:
-                self.fingerTable.append([self.nodeId+i,fingerNode])
+                self.fingerTable.append([self.nodeId+pow(2,i),fingerNode])
 
             else:
                 for j in aliveNodes:
-                    #print 'j=', j
                     if aliveNodes[-1] < fingerNode:
-                        self.fingerTable.append([self.nodeId+i,aliveNodes[0]])
+                        self.fingerTable.append([self.nodeId+pow(2,i),aliveNodes[0]])
                         break
-                    if j > fingerNode:
-                        self.fingerTable.append([self.nodeId+i,j])
+                    if j >= fingerNode:
+                        self.fingerTable.append([self.nodeId+pow(2,i),j])
                         break
 
 
@@ -234,7 +255,23 @@ fileIdsList = hashedFilesIds(filetxt, args.N -1)
 chord=Chord(args.N-1)
 chord.assignFilesToNodes(fileIdsList)
 chord.updateTables()
-print "requesting from node: " + str(choice(chord.getAliveNodes()))
-chord.requestFile(10,choice(chord.getAliveNodes()))
-#for node in chord.nodeList:
-#    print node.getFileList()
+
+maxiters = 0
+randomNodeId = choice(chord.getAliveNodes())
+
+print "requesting from node: " + str(randomNodeId)
+
+
+#valia for debug start
+for i in chord.nodeList:
+    if i.nodeId == randomNodeId:
+        randomNode = i
+firstFingerTable = randomNode.getFingerTable()
+#print " FirstFingerTable = ", firstFingerTable
+#valia for debug end
+
+if randomNodeId != 10: 
+    chord.lookup(10,randomNodeId, maxiters)              #valia was requestFile
+else:
+    print "responsibleNode = ", randomNodeId
+

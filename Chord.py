@@ -1,6 +1,7 @@
 import argparse
 from random import randrange
 from random import choice
+from random import randint
 import hashlib
 import operator
 import numpy as np
@@ -9,7 +10,6 @@ import numpy as np
 #*************************************************************************************************
 #**********************************GENERIC FUNCTIONS**********************************************
 #*************************************************************************************************
-
 def randomNodeGenerator(N,maxNodes):
     randomIpsAndPorts=generateRandomIPsAndPorts(N,maxNodes)
 
@@ -43,7 +43,8 @@ def hashedFilesIds(filetxt, maxNodes):
 
     for row in filetxt:
         fileId=int(int(hashlib.sha1(row).hexdigest(),16) %(maxNodes))
-        fileIdsList.append(fileId)
+        if fileId not in fileIdsList:
+            fileIdsList.append(fileId)
 
     return fileIdsList
 
@@ -86,14 +87,13 @@ class Chord(object):
 	self.nodeList=randomNodeGenerator(N,self.maxNodes)
 	self.aliveNodes=[i.getNodeId() for i in self.nodeList]
 
-	for i in self.nodeList:
-    		print "Node: " + str(i.getNodeId()) + " with predecessor: " + str(i.getPredecessor())
 
+    def getNodeList(self):
+        return self.nodeList
 
 
     def getAliveNodes(self):
         return self.aliveNodes
-
 
 
     def assignFilesToNodes(self,fileIdsList):
@@ -108,7 +108,6 @@ class Chord(object):
                     if node.getNodeId() > f:
                         node.storeFileToNode(f)
                         break
-
 
 
     def findNextNode(self, f, current):
@@ -130,10 +129,8 @@ class Chord(object):
         return currentFingerTable[self.m-1][1]
 
 
-
     def sendMessage(self, f, node):
         node.writeToQueue(f)
-
 
 
     def lookup(self, f, node):
@@ -154,7 +151,7 @@ class Chord(object):
 
             for temp in self.nodeList:
                 if successor==temp.getNodeId():
-                    self.sendMessage(f,successor)
+                    self.sendMessage(f,temp)
 
         elif not (currentNode.isFileStoredLocally(f)):
             nextNode = self.findNextNode(f, currentNode)
@@ -168,7 +165,6 @@ class Chord(object):
         else:
             print "File: " + str(f) + " located in node: "+ str(currentNode.getNodeId())
             currentNode.increaseMessagesServed()
-
 
 
     def updateTables(self):
@@ -193,26 +189,46 @@ class node(object):
         self.messagesRouted=0
         self.messagesServed=0 #fileRequest
 
+
+    def getStatDict(self):
+        return self.statDict
+
+
+    def getMessagesServed(self):
+        return self.messagesServed
+
+
+    def getMessagesRouted(self):
+        return self.messagesRouted
+
+
     def increaseMessagesRouted(self):
         self.messagesRouted+=1
 
-    def increasemessagesServed(self):
+
+    def increaseMessagesServed(self):
         self.messagesServed+=1
+
 
     def getFingerTable(self):
         return self.fingerTable
 
+
     def getNodeId(self):
         return self.nodeId
+
 
     def getPredecessor(self):
         return self.predecessor
 
+
     def storeFileToNode(self,f):
         self.fileList.append(f)
 
+
     def getFileList(self):
         return self.fileList
+
 
     def isFileStoredLocally(self, requestId):
         #this method should check if the current node contains the
@@ -223,22 +239,25 @@ class node(object):
         else:
             return False
 
+
     def writeToQueue(self,item):
         self.inQueue.append(item);
+
 
     def readFromQueue(self):
         #When it is the turn for the node to handle (send and receive) requests
         #this function should check what is present in the nodes incoming Queue( the queue containing the
         #requests that were written from others in the nodes "shared memory")
-        if not self.inQueue.empty():
-            fileToAsk = self.inQueue.get()
+        if len(self.inQueue) >0:
+            fileToAsk = self.inQueue.pop(0)
             if fileToAsk not in self.statDict:
-                statDict[fileToAsk]=0
+                self.statDict[fileToAsk]=1
             else:
-                statDict[fileToAsk]+=1
+                self.statDict[fileToAsk]+=1
             return fileToAsk
         else:
             return -1
+
 
     def updateFingerTable(self, m, aliveNodes):
         for i in range (m):
@@ -276,6 +295,8 @@ fileIdsList = hashedFilesIds(filetxt, args.N -1)
 
 chord=Chord(args.N-1)
 chord.assignFilesToNodes(fileIdsList)
+print fileIdsList
+
 chord.updateTables()
 
 randomNodeId = choice(chord.getAliveNodes())
@@ -295,8 +316,31 @@ firstFingerTable = randomNode.getFingerTable()
 #tha stelnoume mia lista
 message=[10,0]
 
-if randomNodeId != 10:
-    chord.lookup(10,randomNodeId)              #valia was requestFile
-else:
-    print "responsibleNode = ", randomNodeId
+#if randomNodeId != 10:
+#    chord.lookup(10,randomNodeId)              #valia was requestFile
+#else:
+#    print "responsibleNode = ", randomNodeId
+for node in chord.getNodeList():
+    node.writeToQueue(randint(0,10))
+    node.writeToQueue(randint(0,10))
+    node.writeToQueue(randint(0,10))
+    node.writeToQueue(randint(0,10))
 
+counter=0
+while counter <1000:
+    for node in chord.getNodeList():
+        requestFile=node.readFromQueue()
+        if requestFile==-1:#no pending Requests in the i-nodes Queue
+            print "Empty queue"
+            continue
+        else:
+            chord.lookup(requestFile,node.getNodeId())
+    counter+=1
+
+for i in chord.getNodeList():
+    print "\n\nNode: " + str(i.getNodeId())
+    print "*************"
+    print "Messages Routed: "+ str(i.getMessagesRouted())
+    print "File Requests Served: " + str(i.getMessagesServed())
+    print "Popularity dictionary: ", i.getStatDict()
+    print "Node Can serve: ", i.getFileList()

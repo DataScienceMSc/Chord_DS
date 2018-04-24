@@ -117,32 +117,15 @@ class Chord(object):
             if currentFingerTable[i][1] > current.nodeId and currentFingerTable[i][1] <= f:
                 print "next node to ask = ", currentFingerTable[i][1]
                 return currentFingerTable[i][1]
-        
+
         return currentFingerTable[self.m-1][1]
 
 
-    def requestFile(self, f, node):
-        #this function will be used after a node has:
-        #---received a request
-        #---searched it has the file requested
-        #---if the file is not stored loccaly
-        #    ---find the most suitable node to pass the request
-        #    ---send the request to the node found above
-        i=0
-        currentNode=self.nodeList[i]
-        while currentNode.getNodeId()!= node:
-                i+=1
-                currentNode=self.nodeList[i]
-        if currentNode.isFileStoredLocally(f):
-            return currentNode
-        else:
-            searchNext = self.findNextNode(f, currentNode)
-            return self.requestFile(f, searchNext)
-    
+
     def lookup(self, f, node, maxiters):
         #print "f=", f
         maxiters+=1
-        
+
         for i in self.nodeList:
             if i.getNodeId() == node :
                 currentNode = i
@@ -183,6 +166,7 @@ class node(object):
         self.fingerTable=[]
         self.fileList=[]
         self.predecessor=predecessor
+        self.statDict={}
 
     def getFingerTable(self):
         return self.fingerTable
@@ -214,6 +198,10 @@ class node(object):
         #requests that were written from others in the nodes "shared memory")
         if not self.inQueue.empty():
             fileToAsk = self.inQueue.get()
+            if fileToAsk not in self.statDict:
+                statDict[fileToAsk]=0
+            else
+                statDict[fileToAsk]+=1
             return fileToAsk
         else:
             return -1
@@ -221,7 +209,7 @@ class node(object):
     def updateFingerTable(self, m, aliveNodes):
         for i in range (m):
             fingerNode = pow(2,i) + self.nodeId
-            
+
             while fingerNode > (pow(2, m) - 1):
                 fingerNode -= pow(2, m) - 1
 
@@ -270,7 +258,7 @@ firstFingerTable = randomNode.getFingerTable()
 #print " FirstFingerTable = ", firstFingerTable
 #valia for debug end
 
-if randomNodeId != 10: 
+if randomNodeId != 10:
     chord.lookup(10,randomNodeId, maxiters)              #valia was requestFile
 else:
     print "responsibleNode = ", randomNodeId

@@ -17,15 +17,18 @@ def randomNodeGenerator(N,maxNodes):
 
     #the predecessor of the first node is the last one
     previousNode=randomIpsAndPorts[-1][0]
+
     for i in randomIpsAndPorts:
             nodeList.append(node(i,previousNode))
             previousNode=i[0]
     return nodeList
 
 
+
 def findMaxNodesPossible(N):
     maxNodes=1
     m=0
+
     while True:
         m+=1
         maxNodes= maxNodes*2
@@ -37,9 +40,11 @@ def findMaxNodesPossible(N):
 
 def hashedFilesIds(filetxt, maxNodes):
     fileIdsList = []
+
     for row in filetxt:
         fileId=int(int(hashlib.sha1(row).hexdigest(),16) %(maxNodes))
         fileIdsList.append(fileId)
+
     return fileIdsList
 
 
@@ -69,10 +74,11 @@ def generateRandomIPsAndPorts(N,maxNodes):
     nodeList.sort(key=lambda x:x[0])
     return nodeList
 
+
+
 #*************************************************************************************************
 #**********************************CHORD FUNCTIONS************************************************
 #*************************************************************************************************
-
 class Chord(object):
     def __init__(self, N):
 
@@ -84,8 +90,10 @@ class Chord(object):
     		print "Node: " + str(i.getNodeId()) + " with predecessor: " + str(i.getPredecessor())
 
 
+
     def getAliveNodes(self):
         return self.aliveNodes
+
 
 
     def assignFilesToNodes(self,fileIdsList):
@@ -100,6 +108,7 @@ class Chord(object):
                     if node.getNodeId() > f:
                         node.storeFileToNode(f)
                         break
+
 
 
     def findNextNode(self, f, current):
@@ -122,41 +131,55 @@ class Chord(object):
 
 
 
-    def lookup(self, f, node, maxiters):
+    def sendMessage(self, f, node):
+        node.writeToQueue(f)
+
+
+
+    def lookup(self, f, node):
         #print "f=", f
-        maxiters+=1
 
         for i in self.nodeList:
             if i.getNodeId() == node :
                 currentNode = i
-        print "currentNodeId", currentNode.nodeId
+        print "currentNodeId", currentNode.getNodeId()
 
         currentFingerTable = currentNode.getFingerTable()
 
-        if f > currentNode.nodeId and f <= currentFingerTable[0][1]:
-            successorLast = currentFingerTable[0][1]
-            print "responsibleNode=", successorLast
-            return successorLast
-        elif maxiters == 50:
-            return -1
+        if f > currentNode.getNodeId() and f <= currentFingerTable[0][1]:
+            successor = currentFingerTable[0][1]
+            print "responsibleNode=", successor
+
+            currentNode.increaseMessagesRouted()
+
+            for temp in self.nodeList:
+                if successor==temp.getNodeId():
+                    self.sendMessage(f,successor)
+
+        elif not (currentNode.isFileStoredLocally(f)):
+            nextNode = self.findNextNode(f, currentNode)
+
+            currentNode.increaseMessagesRouted()
+
+            for temp in self.nodeList:
+                if nextNode==temp.getNodeId():
+                    self.sendMessage(f,temp)
+
         else:
-            if not (currentNode.isFileStoredLocally(f)):
-                nextNode = self.findNextNode(f, currentNode)
-                #print "nextNode looking in =", nextNode
-                result = self.lookup(f, nextNode, maxiters)
-                return result
-            else:
-                return nextNode
+            print "File: " + str(f) + " located in node: "+ str(currentNode.getNodeId())
+            currentNode.increaseMessagesServed()
+
 
 
     def updateTables(self):
         for i in self.nodeList:
             i.updateFingerTable(self.m,self.aliveNodes)
 
+
+
 #*************************************************************************************************
 #**********************************NODE FUNCTIONS*************************************************
 #*************************************************************************************************
-
 class node(object):
     def __init__(self,lst,predecessor):
         self.nodeId=lst[0]
@@ -167,6 +190,14 @@ class node(object):
         self.fileList=[]
         self.predecessor=predecessor
         self.statDict={}
+        self.messagesRouted=0
+        self.messagesServed=0 #fileRequest
+
+    def increaseMessagesRouted(self):
+        self.messagesRouted+=1
+
+    def increasemessagesServed(self):
+        self.messagesServed+=1
 
     def getFingerTable(self):
         return self.fingerTable
@@ -192,6 +223,9 @@ class node(object):
         else:
             return False
 
+    def writeToQueue(self,item):
+        self.inQueue.append(item);
+
     def readFromQueue(self):
         #When it is the turn for the node to handle (send and receive) requests
         #this function should check what is present in the nodes incoming Queue( the queue containing the
@@ -200,7 +234,7 @@ class node(object):
             fileToAsk = self.inQueue.get()
             if fileToAsk not in self.statDict:
                 statDict[fileToAsk]=0
-            else
+            else:
                 statDict[fileToAsk]+=1
             return fileToAsk
         else:
@@ -244,7 +278,6 @@ chord=Chord(args.N-1)
 chord.assignFilesToNodes(fileIdsList)
 chord.updateTables()
 
-maxiters = 0
 randomNodeId = choice(chord.getAliveNodes())
 
 print "requesting from node: " + str(randomNodeId)
@@ -258,8 +291,12 @@ firstFingerTable = randomNode.getFingerTable()
 #print " FirstFingerTable = ", firstFingerTable
 #valia for debug end
 
+#gia na metrisoume to chain (posa hops ekane kathe minima)
+#tha stelnoume mia lista
+message=[10,0]
+
 if randomNodeId != 10:
-    chord.lookup(10,randomNodeId, maxiters)              #valia was requestFile
+    chord.lookup(10,randomNodeId)              #valia was requestFile
 else:
     print "responsibleNode = ", randomNodeId
 

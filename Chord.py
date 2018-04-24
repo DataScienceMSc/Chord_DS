@@ -118,12 +118,12 @@ class Chord(object):
             f -= pow(2, self.m) - 1
 
         currentFingerTable=current.getFingerTable()
-        print "nodeid=", current.nodeId
-        print "FingerTable=", currentFingerTable
-        print "m=", self.m
+        #print "nodeid=", current.nodeId
+        #print "FingerTable=", currentFingerTable
+        #print "m=", self.m
         for i in range(self.m-1, 0, -1):
             if currentFingerTable[i][1] > current.nodeId and currentFingerTable[i][1] <= f:
-                print "next node to ask = ", currentFingerTable[i][1]
+                #print "next node to ask = ", currentFingerTable[i][1]
                 return currentFingerTable[i][1]
 
         return currentFingerTable[self.m-1][1]
@@ -134,18 +134,17 @@ class Chord(object):
 
 
     def lookup(self, f, node):
-        #print "f=", f
 
         for i in self.nodeList:
             if i.getNodeId() == node :
                 currentNode = i
-        print "currentNodeId", currentNode.getNodeId()
+        #print "currentNodeId", currentNode.getNodeId()
 
         currentFingerTable = currentNode.getFingerTable()
 
-        if f > currentNode.getNodeId() and f <= currentFingerTable[0][1]:
+        if f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
-            print "responsibleNode=", successor
+            #print "responsibleNode=", successor
 
             currentNode.increaseMessagesRouted()
 
@@ -153,17 +152,16 @@ class Chord(object):
                 if successor==temp.getNodeId():
                     self.sendMessage(f,temp)
 
-        elif not (currentNode.isFileStoredLocally(f)):
-            nextNode = self.findNextNode(f, currentNode)
+        elif not (currentNode.isFileStoredLocally(f[0])):
+            nextNode = self.findNextNode(f[0], currentNode)
 
             currentNode.increaseMessagesRouted()
-
             for temp in self.nodeList:
                 if nextNode==temp.getNodeId():
                     self.sendMessage(f,temp)
 
         else:
-            print "File: " + str(f) + " located in node: "+ str(currentNode.getNodeId())
+            print "File: " + str(f[0]) + " served by node: "+ str(currentNode.getNodeId()) +" and total hops: "+ str(f[1])
             currentNode.increaseMessagesServed()
 
 
@@ -249,14 +247,15 @@ class node(object):
         #this function should check what is present in the nodes incoming Queue( the queue containing the
         #requests that were written from others in the nodes "shared memory")
         if len(self.inQueue) >0:
-            fileToAsk = self.inQueue.pop(0)
-            if fileToAsk not in self.statDict:
-                self.statDict[fileToAsk]=1
+            request = self.inQueue.pop(0)
+            if request[0] not in self.statDict:
+                self.statDict[request[0]]=1
             else:
-                self.statDict[fileToAsk]+=1
-            return fileToAsk
+                self.statDict[request[0]]+=1
+            request[1]+=1 #adding one hop
+            return request
         else:
-            return -1
+            return None
 
 
     def updateFingerTable(self, m, aliveNodes):
@@ -295,7 +294,6 @@ fileIdsList = hashedFilesIds(filetxt, args.N -1)
 
 chord=Chord(args.N-1)
 chord.assignFilesToNodes(fileIdsList)
-print fileIdsList
 
 chord.updateTables()
 
@@ -320,21 +318,21 @@ message=[10,0]
 #    chord.lookup(10,randomNodeId)              #valia was requestFile
 #else:
 #    print "responsibleNode = ", randomNodeId
+print "Total requests: "+ str(len(chord.getNodeList()*4))
 for node in chord.getNodeList():
-    node.writeToQueue(randint(0,10))
-    node.writeToQueue(randint(0,10))
-    node.writeToQueue(randint(0,10))
-    node.writeToQueue(randint(0,10))
+    node.writeToQueue([randint(0,10),0])
+    node.writeToQueue([randint(0,10),0])
+    node.writeToQueue([randint(0,10),0])
+    node.writeToQueue([randint(0,10),0])
 
 counter=0
 while counter <1000:
     for node in chord.getNodeList():
-        requestFile=node.readFromQueue()
-        if requestFile==-1:#no pending Requests in the i-nodes Queue
-            print "Empty queue"
+        request=node.readFromQueue()
+        if request==None:#no pending Requests in the i-nodes Queue
             continue
         else:
-            chord.lookup(requestFile,node.getNodeId())
+            chord.lookup(request,node.getNodeId())
     counter+=1
 
 for i in chord.getNodeList():

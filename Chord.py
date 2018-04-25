@@ -98,15 +98,18 @@ class Chord(object):
 
     def assignFilesToNodes(self,fileIdsList):
         #finds the node responsible for a fileId
-
+        print fileIdsList
 	for f in fileIdsList:
-            for node in self.nodeList:
+            for counter,node in enumerate(self.nodeList):
                 if f == node.getNodeId():
                     node.storeFileToNode(f)
                     break
                 else:
                     if node.getNodeId() > f:
                         node.storeFileToNode(f)
+                        break
+                    elif node.getNodeId()<f and counter==len(self.nodeList):
+                        self.nodeList[0].storeFileToNode(f)
                         break
 
 
@@ -141,17 +144,14 @@ class Chord(object):
         #print "currentNodeId", currentNode.getNodeId()
 
         currentFingerTable = currentNode.getFingerTable()
-
+        print currentFingerTable
         if f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
-            #print "responsibleNode=", successor
-
-            currentNode.increaseMessagesRouted()
 
             for temp in self.nodeList:
                 if successor==temp.getNodeId():
-                    self.sendMessage(f,temp)
-
+                    temp.increaseMessagesServed()
+            print "File: " + str(f[0]) + " served by node: "+ str(successor) +" and request path: ",f[1:]
         elif not (currentNode.isFileStoredLocally(f[0])):
             nextNode = self.findNextNode(f[0], currentNode)
 
@@ -161,7 +161,7 @@ class Chord(object):
                     self.sendMessage(f,temp)
 
         else:
-            print "File: " + str(f[0]) + " served by node: "+ str(currentNode.getNodeId()) +" and total hops: "+ str(f[1])
+            print "File: " + str(f[0]) + " served by node: "+ str(currentNode.getNodeId()) +" and request path: ",f[1:]
             currentNode.increaseMessagesServed()
 
 
@@ -252,7 +252,8 @@ class node(object):
                 self.statDict[request[0]]=1
             else:
                 self.statDict[request[0]]+=1
-            request[1]+=1 #adding one hop
+            #request[1]+=1 #adding one hop
+            request.append(self.nodeId)
             return request
         else:
             return None
@@ -320,10 +321,10 @@ message=[10,0]
 #    print "responsibleNode = ", randomNodeId
 print "Total requests: "+ str(len(chord.getNodeList()*4))
 for node in chord.getNodeList():
-    node.writeToQueue([randint(0,10),0])
-    node.writeToQueue([randint(0,10),0])
-    node.writeToQueue([randint(0,10),0])
-    node.writeToQueue([randint(0,10),0])
+    node.writeToQueue([choice(fileIdsList),randint(0,16)])
+    node.writeToQueue([choice(fileIdsList),randint(0,16)])
+    node.writeToQueue([choice(fileIdsList),randint(0,16)])
+    node.writeToQueue([choice(fileIdsList),randint(0,16)])
 
 counter=0
 while counter <1000:
@@ -335,6 +336,7 @@ while counter <1000:
             chord.lookup(request,node.getNodeId())
     counter+=1
 
+print "AliveNodes: ", chord.getAliveNodes()
 for i in chord.getNodeList():
     print "\n\nNode: " + str(i.getNodeId())
     print "*************"

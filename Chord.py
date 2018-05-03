@@ -5,7 +5,7 @@ from random import randint
 import hashlib
 from operator import itemgetter
 import numpy as np
-
+from scipy.stats import powerlaw
 
 #*************************************************************************************************
 #**********************************GENERIC FUNCTIONS**********************************************
@@ -88,6 +88,9 @@ class Chord(object):
 	self.aliveNodes=[i.getNodeId() for i in self.nodeList]
 
 
+    def getMaxNodes(self):
+        return self.maxNodes
+
     def getNodeList(self):
         return self.nodeList
 
@@ -142,32 +145,26 @@ class Chord(object):
         for i in self.nodeList:
             if i.getNodeId() == node :
                 currentNode = i
-        #print "currentNodeId", currentNode.getNodeId()
 
         currentFingerTable = currentNode.getFingerTable()
         print "node", node, "with ft ", currentFingerTable
-        if f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
+        if f > currentNode.getNodeId() and f <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
 
             for temp in self.nodeList:
                 if successor==temp.getNodeId():
-                    #temp.increaseMessagesServed()
                     pass
-            print "File: " + str(f[0]) + " served by node: "+ str(successor) +" and request path: ",f[1:]
-        elif f[0] == currentNode.getNodeId() or currentNode.isFileStoredLocally(f[0]): 
-                print "File: " + str(f[0]) + " served by node: "+ str(currentNode.getNodeId()) +" and request path: ",f[1:]
+            print "File: " + str(f) + " served by node: "+ str(successor)
+        elif f == currentNode.getNodeId() or currentNode.isFileStoredLocally(f):
+                print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
         else:
-            
-            nextNode = self.findNextNode(f[0], currentNode)
-            print "Next Node", nextNode
+
+            nextNode = self.findNextNode(f, currentNode)
+            print "Not able to serve, sending to: ", nextNode
             currentNode.increaseMessagesRouted()
             for temp in self.nodeList:
                 if nextNode==temp.getNodeId():
                     self.sendMessage(f,temp)
-
-        #else:
-         #   print "File: " + str(f[0]) + " served by node: "+ str(currentNode.getNodeId()) +" and request path: ",f[1:]
-            #currentNode.increaseMessagesServed()
 
 
     def updateTables(self):
@@ -254,12 +251,10 @@ class node(object):
         if len(self.inQueue) >0:
             request = self.inQueue.pop(0)
             print "request", request
-            if request[0] not in self.statDict:
-                self.statDict[request[0]]=1
+            if request not in self.statDict:
+                self.statDict[request]=1
             else:
-                self.statDict[request[0]]+=1
-            #request[1]+=1 #adding one hop
-            #request.append(self.nodeId)
+                self.statDict[request]+=1
             return request
         else:
             return None
@@ -304,36 +299,33 @@ chord.assignFilesToNodes(fileIdsList)
 
 chord.updateTables()
 
-randomNodeId = choice(chord.getAliveNodes())
-
+#randomNodeId = choice(chord.getAliveNodes())
 #valia for debug start
-for i in chord.nodeList:
-    if i.nodeId == randomNodeId:
-        randomNode = i
-firstFingerTable = randomNode.getFingerTable()
+#for i in chord.nodeList:
+#    if i.nodeId == randomNodeId:
+#        randomNode = i
+#firstFingerTable = randomNode.getFingerTable()
 #print " FirstFingerTable = ", firstFingerTable
 #valia for debug end
 
 #gia na metrisoume to chain (posa hops ekane kathe minima)
 #tha stelnoume mia lista
-message=[10,0]
 
-#if randomNodeId != 10:
-#    chord.lookup(10,randomNodeId)              #valia was requestFile
-#else:
-#    print "responsibleNode = ", randomNodeId
-print "Total requests: "+ str(len(chord.getNodeList()*4))
-for node in chord.getNodeList():
-    node.writeToQueue([choice(fileIdsList),randint(1,16)])
-    node.writeToQueue([choice(fileIdsList),randint(1,16)])
-    node.writeToQueue([choice(fileIdsList),randint(1,16)])
-    node.writeToQueue([choice(fileIdsList),randint(1,16)])
+
+
+requestList=powerlaw.rvs(1.65, size=1000, discrete=True,scale=chord.getMaxNodes())
+
+lst=[choice(chord.getNodeList()) for i in range(1,1000)]
+
+for (node,request) in zip(lst,requestList):
+    node.writeToQueue(request)
 
 #valia for debug start
 #for node in chord.getNodeList():
  #   if node.getNodeId() == 9:
   #      node.writeToQueue([0,11])
 #valia for debug end
+
 
 counter=0
 while counter <1000:
@@ -342,11 +334,10 @@ while counter <1000:
         if request==None:#no pending Requests in the i-nodes Queue
             continue
         else:
-            print "start node", node.getNodeId(), "looking for file", request[0]
+            #print "start node", node.getNodeId(), "looking for file", request
             chord.lookup(request,node.getNodeId())
     counter+=1
 
-print "AliveNodes: ", chord.getAliveNodes()
 for i in chord.getNodeList():
     print "\n\nNode: " + str(i.getNodeId())
     print "*************"

@@ -100,21 +100,22 @@ class Chord(object):
 
 
     def assignFilesToNodes(self,fileIdsList):
-        #finds the node responsible for a fileId
-        #print fileIdsList
-	for f in fileIdsList:
+    #finds the node responsible for a fileId
+    #print fileIdsList
+        for i in range(pow(2,self.m)):
             for counter,node in enumerate(self.nodeList):
-                if f == node.getNodeId():
-                    node.storeFileToNode(f)
+                #print i, counter, node.getNodeId()
+                if node.getNodeId() >= i:
+                    self.nodeList[counter].storeFileToNode(i)
+                    #print "in if", counter, node.getNodeId(), i                    
                     break
-                else:
-                    if node.getNodeId() > f:
-                        node.storeFileToNode(f)
-                        break
-                    elif node.getNodeId()<f and counter==len(self.nodeList):
-                        self.nodeList[0].storeFileToNode(f)
-                        break
-
+                #print "i in assign=", i
+                if i > (self.nodeList[-1]):
+                    print "telos"               
+                    self.nodeList[0].storeFileToNode(i)
+                    break
+                    
+	
 
     def findNextNode(self, f, current):
       #given the requested file (id), find the best node to pass the request
@@ -126,16 +127,24 @@ class Chord(object):
         currentFingerTable=current.getFingerTable()
 
         for i in range(self.m-1, -1, -1):
-            if f <= currentFingerTable[i][1] and f > currentFingerTable[i-1][1]:
-                return currentFingerTable[i-1][1]
-            if currentFingerTable[i][1] < f:
+            #print "i=", i
+            if currentFingerTable[i][1] <= f:
                 return currentFingerTable[i][1]
                 print max(currentFingerTable,key=itemgetter(1))[1]
+            if f <= currentFingerTable[i][1] and f > currentFingerTable[i-1][1]:
+                return currentFingerTable[i-1][1]
+            
         return max(currentFingerTable,key=itemgetter(1))[1]
         #na doume ti kanei stin periptwsi pou to file einai mikrotero apo to node pou to psaxnei, kati paei strava, prepei na mpei allo ena if gia na min epistrefei ton teleutaio node giati xanei auton pou to exei
         #return currentFingerTable[self.m-1][1]
 
-
+    def findMax(fingertable, f):
+        maxAndLess = fingertable[-1]
+        for i in range(self.m-1,-1,-1):
+            if fingertable[i][1] > maxAndLess and fingertable[i][1] <= f:
+                maxAndLess = fingertable[i][1]
+        return maxAndLess
+            
     def sendMessage(self, f, node):
         node.writeToQueue(f)
 
@@ -150,12 +159,8 @@ class Chord(object):
         print "node", node, "with ft ", currentFingerTable
         if f > currentNode.getNodeId() and f <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
-
-            for temp in self.nodeList:
-                if successor==temp.getNodeId():
-                    pass
             print "File: " + str(f) + " served by node: "+ str(successor)
-        elif f == currentNode.getNodeId() or currentNode.isFileStoredLocally(f):
+        elif f == currentNode.getNodeId() or (f in currentNode.getFileList()):
                 print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
         else:
 
@@ -164,6 +169,7 @@ class Chord(object):
             currentNode.increaseMessagesRouted()
             for temp in self.nodeList:
                 if nextNode==temp.getNodeId():
+                    print "elseeeeeeeeeeeeee"
                     self.sendMessage(f,temp)
 
 
@@ -241,7 +247,9 @@ class node(object):
 
 
     def writeToQueue(self,item):
-        self.inQueue.append(item);
+        self.inQueue.append(item)
+        print self.inQueue
+        print self.getNodeId()
 
 
     def readFromQueue(self):
@@ -315,7 +323,7 @@ chord.updateTables()
 
 requestList=powerlaw.rvs(1.65, size=1000, discrete=True,scale=chord.getMaxNodes())
 
-lst=[choice(chord.getNodeList()) for i in range(1,1000)]
+lst=[choice(chord.getNodeList()) for i in range(1,10)]
 
 for (node,request) in zip(lst,requestList):
     node.writeToQueue(request)
@@ -328,7 +336,7 @@ for (node,request) in zip(lst,requestList):
 
 
 counter=0
-while counter <1000:
+while counter <10:
     for node in chord.getNodeList():
         request=node.readFromQueue()
         if request==None:#no pending Requests in the i-nodes Queue

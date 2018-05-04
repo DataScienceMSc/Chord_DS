@@ -98,7 +98,7 @@ def generateRandomIPsAndPorts(N,maxNodes):
 #*************************************************************************************************
 class Chord(object):
     def __init__(self, N):
-
+        self.m,self.maxNodes=findMaxNodesPossible(N)
 	self.nodeList=randomNodeGenerator(N,self.maxNodes)
 	self.aliveNodes=[i.getNodeId() for i in self.nodeList]
 

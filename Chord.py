@@ -1,6 +1,7 @@
 import argparse
 from random import randrange
 from random import choice
+import os.path
 from random import randint
 import hashlib
 from operator import itemgetter
@@ -10,6 +11,33 @@ from scipy.stats import powerlaw
 #*************************************************************************************************
 #**********************************GENERIC FUNCTIONS**********************************************
 #*************************************************************************************************
+
+
+# Prints to a file all the requested fileIds, along with the times
+#each file id was requested.
+def generatePLDistFile(N,requestList,maxNodes):
+    filename="requests_"+str(N)
+
+    if os.path.exists(filename+".txt"):
+        i=1
+        while True:
+            temp_filename=filename+"_("+str(i)+")"
+            if not os.path.exists(temp_filename+".txt"):
+                filename=temp_filename
+                break
+            i+=1
+
+    filename+=".txt"
+
+    with open(filename, 'a') as the_file:
+        the_file.write('Using popularity distribution from\n')
+        the_file.write('scipy.stats to generate request for file Ids.\n')
+        for i in range(0,maxNodes):
+            the_file.write("Movie with id: "+str(i)+"appears "+str(list(requestList).count(i))+" times\n")
+    the_file.close()
+
+
+
 def randomNodeGenerator(N,maxNodes):
     randomIpsAndPorts=generateRandomIPsAndPorts(N,maxNodes)
 
@@ -46,6 +74,7 @@ def hashedFilesIds(filetxt, maxNodes):
         if fileId not in fileIdsList and fileId !=0:
             fileIdsList.append(fileId)
 
+    print fileIdsList
     return fileIdsList
 
 
@@ -103,16 +132,20 @@ class Chord(object):
         #finds the node responsible for a fileId
         #print fileIdsList
 	for f in fileIdsList:
+            print "file: ", f
             for counter,node in enumerate(self.nodeList):
                 if f == node.getNodeId():
                     node.storeFileToNode(f)
+                    print "stored in", node.getNodeId()
                     break
                 else:
                     if node.getNodeId() > f:
                         node.storeFileToNode(f)
+                        print "stored in", node.getNodeId()
                         break
                     elif node.getNodeId()<f and counter==len(self.nodeList):
                         self.nodeList[0].storeFileToNode(f)
+                        print "stored in", node.getNodeId()
                         break
 
 
@@ -311,37 +344,35 @@ chord.updateTables()
 #gia na metrisoume to chain (posa hops ekane kathe minima)
 #tha stelnoume mia lista
 
-
-
 requestList=powerlaw.rvs(1.65, size=1000, discrete=True,scale=chord.getMaxNodes())
-
+generatePLDistFile(args.N,requestList,chord.getMaxNodes())
 lst=[choice(chord.getNodeList()) for i in range(1,1000)]
 
-for (node,request) in zip(lst,requestList):
-    node.writeToQueue(request)
-
-#valia for debug start
-#for node in chord.getNodeList():
- #   if node.getNodeId() == 9:
-  #      node.writeToQueue([0,11])
-#valia for debug end
-
-
-counter=0
-while counter <1000:
-    for node in chord.getNodeList():
-        request=node.readFromQueue()
-        if request==None:#no pending Requests in the i-nodes Queue
-            continue
-        else:
-            #print "start node", node.getNodeId(), "looking for file", request
-            chord.lookup(request,node.getNodeId())
-    counter+=1
-
-for i in chord.getNodeList():
-    print "\n\nNode: " + str(i.getNodeId())
-    print "*************"
-    print "Messages Routed: "+ str(i.getMessagesRouted())
-    print "File Requests Served: " + str(i.getMessagesServed())
-    print "Popularity dictionary: ", i.getStatDict()
-    print "Node Can serve: ", i.getFileList()
+#for (node,request) in zip(lst,requestList):
+#    node.writeToQueue(request)
+#
+##valia for debug start
+##for node in chord.getNodeList():
+# #   if node.getNodeId() == 9:
+#  #      node.writeToQueue([0,11])
+##valia for debug end
+#
+#
+#counter=0
+#while counter <1000:
+#    for node in chord.getNodeList():
+#        request=node.readFromQueue()
+#        if request==None:#no pending Requests in the i-nodes Queue
+#            continue
+#        else:
+#            #print "start node", node.getNodeId(), "looking for file", request
+#            chord.lookup(request,node.getNodeId())
+#    counter+=1
+#
+#for i in chord.getNodeList():
+#    print "\n\nNode: " + str(i.getNodeId())
+#    print "*************"
+#    print "Messages Routed: "+ str(i.getMessagesRouted())
+#    print "File Requests Served: " + str(i.getMessagesServed())
+#    print "Popularity dictionary: ", i.getStatDict()
+#    print "Node Can serve: ", i.getFileList()

@@ -1,6 +1,7 @@
 import argparse
 from random import randrange
 from random import choice
+import os.path
 from random import randint
 import hashlib
 from operator import itemgetter
@@ -10,6 +11,33 @@ from scipy.stats import powerlaw
 #*************************************************************************************************
 #**********************************GENERIC FUNCTIONS**********************************************
 #*************************************************************************************************
+
+
+# Prints to a file all the requested fileIds, along with the times
+#each file id was requested.
+def generatePLDistFile(N,requestList,maxNodes):
+    filename="requests_"+str(N)
+
+    if os.path.exists(filename+".txt"):
+        i=1
+        while True:
+            temp_filename=filename+"_("+str(i)+")"
+            if not os.path.exists(temp_filename+".txt"):
+                filename=temp_filename
+                break
+            i+=1
+
+    filename+=".txt"
+
+    with open(filename, 'a') as the_file:
+        the_file.write('Using popularity distribution from\n')
+        the_file.write('scipy.stats to generate request for file Ids.\n')
+        for i in range(0,maxNodes):
+            the_file.write("Movie with id: "+str(i)+"appears "+str(list(requestList).count(i))+" times\n")
+    the_file.close()
+
+
+
 def randomNodeGenerator(N,maxNodes):
     randomIpsAndPorts=generateRandomIPsAndPorts(N,maxNodes)
 
@@ -46,6 +74,7 @@ def hashedFilesIds(filetxt, maxNodes):
         if fileId not in fileIdsList and fileId !=0:
             fileIdsList.append(fileId)
 
+    print fileIdsList
     return fileIdsList
 
 
@@ -117,6 +146,7 @@ class Chord(object):
                     
 	
 
+
     def findNextNode(self, f, current):
       #given the requested file (id), find the best node to pass the request
        #if file is not stored locally
@@ -156,16 +186,29 @@ class Chord(object):
                 currentNode = i
 
         currentFingerTable = currentNode.getFingerTable()
-        print "node", node, "with ft ", currentFingerTable
-        if f > currentNode.getNodeId() and f <= currentFingerTable[0][1]:
+        #print "node", node, "with ft ", currentFingerTable
+        if f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
-            print "File: " + str(f) + " served by node: "+ str(successor)
-        elif f == currentNode.getNodeId() or (f in currentNode.getFileList()):
+
+            for temp in self.nodeList:
+                if successor==temp.getNodeId():
+                    pass
+            print "File: " + str(f[0]) + " served by node: "+ str(successor)
+        elif f[0] == currentNode.getNodeId() or currentNode.isFileStoredLocally(f[0]):
                 print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
         else:
+            #only applicable for the first "route" of one request
+            if currentNode.getNodeId() not in f[1:]:
+                f.append(currentNode.getNodeId())
 
-            nextNode = self.findNextNode(f, currentNode)
-            print "Not able to serve, sending to: ", nextNode
+            nextNode = self.findNextNode(f[0], currentNode)
+
+            #if the file has been routed this way before,
+            #do not try routing again.
+            if nextNode in f[1:]:
+                print "Not able to find the requested file",f[0]
+                return
+
             currentNode.increaseMessagesRouted()
             for temp in self.nodeList:
                 if nextNode==temp.getNodeId():
@@ -256,13 +299,15 @@ class node(object):
         #When it is the turn for the node to handle (send and receive) requests
         #this function should check what is present in the nodes incoming Queue( the queue containing the
         #requests that were written from others in the nodes "shared memory")
+        if self.getNodeId()==5:
+            print "node's",self.getNodeId()," queue content: ", self.inQueue
         if len(self.inQueue) >0:
             request = self.inQueue.pop(0)
             print "request", request
-            if request not in self.statDict:
-                self.statDict[request]=1
+            if request[0] not in self.statDict:
+                self.statDict[request[0]]=1
             else:
-                self.statDict[request]+=1
+                self.statDict[request[0]]+=1
             return request
         else:
             return None
@@ -319,14 +364,14 @@ chord.updateTables()
 #gia na metrisoume to chain (posa hops ekane kathe minima)
 #tha stelnoume mia lista
 
-
-
 requestList=powerlaw.rvs(1.65, size=1000, discrete=True,scale=chord.getMaxNodes())
 
-lst=[choice(chord.getNodeList()) for i in range(1,10)]
+generatePLDistFile(args.N,requestList,chord.getMaxNodes())
+lst=[choice(chord.getNodeList()) for i in range(1,1000)]
+
 
 for (node,request) in zip(lst,requestList):
-    node.writeToQueue(request)
+    node.writeToQueue([request,node.getNodeId()])
 
 #valia for debug start
 #for node in chord.getNodeList():

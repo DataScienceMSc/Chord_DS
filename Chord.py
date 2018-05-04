@@ -348,31 +348,31 @@ requestList=powerlaw.rvs(1.65, size=1000, discrete=True,scale=chord.getMaxNodes(
 generatePLDistFile(args.N,requestList,chord.getMaxNodes())
 lst=[choice(chord.getNodeList()) for i in range(1,1000)]
 
-#for (node,request) in zip(lst,requestList):
-#    node.writeToQueue(request)
-#
-##valia for debug start
-##for node in chord.getNodeList():
-# #   if node.getNodeId() == 9:
-#  #      node.writeToQueue([0,11])
-##valia for debug end
-#
-#
-#counter=0
-#while counter <1000:
-#    for node in chord.getNodeList():
-#        request=node.readFromQueue()
-#        if request==None:#no pending Requests in the i-nodes Queue
-#            continue
-#        else:
-#            #print "start node", node.getNodeId(), "looking for file", request
-#            chord.lookup(request,node.getNodeId())
-#    counter+=1
-#
-#for i in chord.getNodeList():
-#    print "\n\nNode: " + str(i.getNodeId())
-#    print "*************"
-#    print "Messages Routed: "+ str(i.getMessagesRouted())
-#    print "File Requests Served: " + str(i.getMessagesServed())
-#    print "Popularity dictionary: ", i.getStatDict()
-#    print "Node Can serve: ", i.getFileList()
+for (node,request) in zip(lst,requestList):
+    node.writeToQueue(request)
+
+#valia for debug start
+#for node in chord.getNodeList():
+ #   if node.getNodeId() == 9:
+  #      node.writeToQueue([0,11])
+#valia for debug end
+
+
+counter=0
+while counter <1000:
+    for node in chord.getNodeList():
+        request=node.readFromQueue()
+        if request==None:#no pending Requests in the i-nodes Queue
+            continue
+        else:
+            #print "start node", node.getNodeId(), "looking for file", request
+            chord.lookup(request,node.getNodeId())
+    counter+=1
+
+for i in chord.getNodeList():
+    print "\n\nNode: " + str(i.getNodeId())
+    print "*************"
+    print "Messages Routed: "+ str(i.getMessagesRouted())
+    print "File Requests Served: " + str(i.getMessagesServed())
+    print "Popularity dictionary: ", i.getStatDict()
+    print "Node Can serve: ", i.getFileList()

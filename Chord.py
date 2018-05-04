@@ -66,19 +66,6 @@ def findMaxNodesPossible(N):
 
 
 
-def hashedFilesIds(filetxt, maxNodes):
-    fileIdsList = []
-
-    for row in filetxt:
-        fileId=int(int(hashlib.sha1(row).hexdigest(),16) %(maxNodes))
-        if fileId not in fileIdsList and fileId !=0:
-            fileIdsList.append(fileId)
-
-    print fileIdsList
-    return fileIdsList
-
-
-
 def generateRandomIPsAndPorts(N,maxNodes):
     nodeList=[]
 
@@ -112,7 +99,6 @@ def generateRandomIPsAndPorts(N,maxNodes):
 class Chord(object):
     def __init__(self, N):
 
-        self.m,self.maxNodes=findMaxNodesPossible(N)
 	self.nodeList=randomNodeGenerator(N,self.maxNodes)
 	self.aliveNodes=[i.getNodeId() for i in self.nodeList]
 
@@ -128,23 +114,21 @@ class Chord(object):
         return self.aliveNodes
 
 
-    def assignFilesToNodes(self,fileIdsList):
+    def assignFilesToNodes(self):
     #finds the node responsible for a fileId
-    #print fileIdsList
         for i in range(pow(2,self.m)):
             for counter,node in enumerate(self.nodeList):
                 #print i, counter, node.getNodeId()
                 if node.getNodeId() >= i:
                     self.nodeList[counter].storeFileToNode(i)
-                    #print "in if", counter, node.getNodeId(), i                    
+                    #print "in if", counter, node.getNodeId(),i
                     break
                 #print "i in assign=", i
                 if i > (self.nodeList[-1]):
-                    print "telos"               
+                    print "telos"
                     self.nodeList[0].storeFileToNode(i)
                     break
-                    
-	
+
 
 
     def findNextNode(self, f, current):
@@ -165,6 +149,7 @@ class Chord(object):
                 print max(currentFingerTable,key=itemgetter(1))[1]
             if f <= currentFingerTable[i][1] and f > currentFingerTable[i-1][1]:
                 return currentFingerTable[i-1][1]
+
             
         return max(currentFingerTable,key=itemgetter(1))[1]'''
 
@@ -178,6 +163,7 @@ class Chord(object):
             
     def sendMessage(self, f, node):
         node.writeToQueue(f)
+
 
 
     def lookup(self, f, node):
@@ -295,16 +281,12 @@ class node(object):
 
     def writeToQueue(self,item):
         self.inQueue.append(item)
-        print self.inQueue
-        print self.getNodeId()
 
 
     def readFromQueue(self):
         #When it is the turn for the node to handle (send and receive) requests
         #this function should check what is present in the nodes incoming Queue( the queue containing the
         #requests that were written from others in the nodes "shared memory")
-        if self.getNodeId()==5:
-            print "node's",self.getNodeId()," queue content: ", self.inQueue
         if len(self.inQueue) >0:
             request = self.inQueue.pop(0)
             print "request", request
@@ -348,11 +330,9 @@ print "given N: ", args.N
 
 
 filetxt = open("filenamestest.txt", "r")
-fileIdsList = hashedFilesIds(filetxt, args.N -1)
-
 
 chord=Chord(args.N-1)
-chord.assignFilesToNodes(fileIdsList)
+chord.assignFilesToNodes()
 
 chord.updateTables()
 

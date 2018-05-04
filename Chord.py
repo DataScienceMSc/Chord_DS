@@ -155,20 +155,21 @@ class Chord(object):
             f -= pow(2, self.m) - 1
 
         currentFingerTable=current.getFingerTable()
-
-        for i in range(self.m-1, -1, -1):
+        print "max=", self.findMax(currentFingerTable, f)
+        return self.findMax(currentFingerTable, f)
+        '''for i in range(self.m-1, -1, -1):
             #print "i=", i
-            if currentFingerTable[i][1] <= f:
+            
+               if currentFingerTable[i][1] <= f:
                 return currentFingerTable[i][1]
                 print max(currentFingerTable,key=itemgetter(1))[1]
             if f <= currentFingerTable[i][1] and f > currentFingerTable[i-1][1]:
                 return currentFingerTable[i-1][1]
             
-        return max(currentFingerTable,key=itemgetter(1))[1]
-        #na doume ti kanei stin periptwsi pou to file einai mikrotero apo to node pou to psaxnei, kati paei strava, prepei na mpei allo ena if gia na min epistrefei ton teleutaio node giati xanei auton pou to exei
-        #return currentFingerTable[self.m-1][1]
+        return max(currentFingerTable,key=itemgetter(1))[1]'''
 
-    def findMax(fingertable, f):
+
+    def findMax(self, fingertable, f):
         maxAndLess = fingertable[-1]
         for i in range(self.m-1,-1,-1):
             if fingertable[i][1] > maxAndLess and fingertable[i][1] <= f:
@@ -186,7 +187,7 @@ class Chord(object):
                 currentNode = i
 
         currentFingerTable = currentNode.getFingerTable()
-        #print "node", node, "with ft ", currentFingerTable
+        print "node", node, "with ft ", currentFingerTable
         if f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
 
@@ -202,7 +203,7 @@ class Chord(object):
                 f.append(currentNode.getNodeId())
 
             nextNode = self.findNextNode(f[0], currentNode)
-
+            print "next node",nextNode
             #if the file has been routed this way before,
             #do not try routing again.
             if nextNode in f[1:]:
@@ -211,9 +212,12 @@ class Chord(object):
 
             currentNode.increaseMessagesRouted()
             for temp in self.nodeList:
-                if nextNode==temp.getNodeId():
+                print "foooooooooooor"
+                if nextNode[1]==temp.getNodeId():
                     print "elseeeeeeeeeeeeee"
                     self.sendMessage(f,temp)
+                else:
+                    print "WTF"  
 
 
     def updateTables(self):
@@ -365,13 +369,16 @@ chord.updateTables()
 #tha stelnoume mia lista
 
 requestList=powerlaw.rvs(1.65, size=1000, discrete=True,scale=chord.getMaxNodes())
-
+ 
 generatePLDistFile(args.N,requestList,chord.getMaxNodes())
-lst=[choice(chord.getNodeList()) for i in range(1,1000)]
+lst=[choice(chord.getNodeList()) for i in range(1,2)]
+#requestList=[[9,0],[9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7], [9,8],[9,9],[9,10], [9,11],[9,12],[9,13]]
 
-
-for (node,request) in zip(lst,requestList):
-    node.writeToQueue([request,node.getNodeId()])
+for j in range(0,16):
+    for node in chord.getNodeList():
+        node.writeToQueue([j,node.getNodeId()])
+#for (node,request) in zip(lst,requestList):
+    #node.writeToQueue([request,node.getNodeId()])
 
 #valia for debug start
 #for node in chord.getNodeList():

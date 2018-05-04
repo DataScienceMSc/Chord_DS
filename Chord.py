@@ -328,9 +328,6 @@ parser.add_argument("--N","--n", type=int, help="Number of nodes present in the 
 args=parser.parse_args()
 print "given N: ", args.N
 
-
-filetxt = open("filenamestest.txt", "r")
-
 chord=Chord(args.N-1)
 chord.assignFilesToNodes()
 

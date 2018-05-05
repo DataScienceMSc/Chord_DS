@@ -155,7 +155,8 @@ class Chord(object):
                 maxAndLess = fingertable[i]
                 #print "maxAndLess=", maxAndLess
             if i == 0 and maxAndLess == fingertable[-1]:
-                maxAndLess = max(fingertable,key=itemgetter(1))
+                distances=[[(fingertable[i][1]-f),fingertable[i]] for i in range(0,len(fingertable)) if (fingertable[i][1]-f)>0 ]
+                maxAndLess = min(distances,key=itemgetter(0))
                 #print "finally ", maxAndLess
         #print "finally finally", maxAndLess
         return maxAndLess
@@ -185,7 +186,7 @@ class Chord(object):
                 currentNode = i
 
         currentFingerTable = currentNode.getFingerTable()
-        #print "node", node, "with ft ", currentFingerTable
+        print "node", node, "with ft ", currentFingerTable
         if f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
 

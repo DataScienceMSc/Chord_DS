@@ -125,7 +125,6 @@ class Chord(object):
                     break
                 #print "i in assign=", i
                 if i > (self.nodeList[-1]):
-                    print "telos"
                     self.nodeList[0].storeFileToNode(i)
                     break
 
@@ -139,26 +138,39 @@ class Chord(object):
             f -= pow(2, self.m) - 1
 
         currentFingerTable=current.getFingerTable()
-        print "max=", self.findMax(currentFingerTable, f)
+        for i in range(self.m-1, -1, -1):
+               if currentFingerTable[i][1] == f:
+                return currentFingerTable[i]
+        if f < current.getNodeId():
+            return self.findMaxIffSmaller(currentFingerTable, f)
+        #print "max=", self.findMax(currentFingerTable, f)
         return self.findMax(currentFingerTable, f)
-        '''for i in range(self.m-1, -1, -1):
-            #print "i=", i
-            
-               if currentFingerTable[i][1] <= f:
-                return currentFingerTable[i][1]
-                print max(currentFingerTable,key=itemgetter(1))[1]
-            if f <= currentFingerTable[i][1] and f > currentFingerTable[i-1][1]:
-                return currentFingerTable[i-1][1]
-
-            
-        return max(currentFingerTable,key=itemgetter(1))[1]'''
-
-
-    def findMax(self, fingertable, f):
+       
+    def findMaxIffSmaller(self, fingertable, f):
         maxAndLess = fingertable[-1]
         for i in range(self.m-1,-1,-1):
-            if fingertable[i][1] > maxAndLess and fingertable[i][1] <= f:
-                maxAndLess = fingertable[i][1]
+            #print "node current in ft=",fingertable[i][0]
+            if fingertable[i][1] <= f:
+                #print "node current in ft=",fingertable[i][0] 
+                maxAndLess = fingertable[i]
+                #print "maxAndLess=", maxAndLess
+            if i == 0 and maxAndLess == fingertable[-1]:
+                maxAndLess = max(fingertable,key=itemgetter(1))
+                #print "finally ", maxAndLess
+        #print "finally finally", maxAndLess
+        return maxAndLess
+
+    def findMax(self, fingertable, f):
+        maxAndLess = fingertable[0]
+        #print "f=", f
+        for i in range(self.m-1,-1,-1):
+            #print "node in ft=", fingertable[i][1]
+            #print "maxAndLess=", maxAndLess
+            if fingertable[i][1] > maxAndLess[1] and fingertable[i][1] <= f:
+                maxAndLess = fingertable[i]
+        #if i == 0 and maxAndLess == fingertable[0]:
+            #maxAndLess = fingertable[-1]
+           
         return maxAndLess
             
     def sendMessage(self, f, node):
@@ -173,13 +185,10 @@ class Chord(object):
                 currentNode = i
 
         currentFingerTable = currentNode.getFingerTable()
-        print "node", node, "with ft ", currentFingerTable
+        #print "node", node, "with ft ", currentFingerTable
         if f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
 
-            for temp in self.nodeList:
-                if successor==temp.getNodeId():
-                    pass
             print "File: " + str(f[0]) + " served by node: "+ str(successor)
         elif f[0] == currentNode.getNodeId() or currentNode.isFileStoredLocally(f[0]):
                 print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
@@ -189,21 +198,21 @@ class Chord(object):
                 f.append(currentNode.getNodeId())
 
             nextNode = self.findNextNode(f[0], currentNode)
-            print "next node",nextNode
+            #print "next node",nextNode
             #if the file has been routed this way before,
             #do not try routing again.
             if nextNode in f[1:]:
                 print "Not able to find the requested file",f[0]
+                #nextNode = currentNode.getSuccessor()
                 return
 
             currentNode.increaseMessagesRouted()
+      
             for temp in self.nodeList:
-                print "foooooooooooor"
+                #print "temp node = ", temp.getNodeId()
                 if nextNode[1]==temp.getNodeId():
-                    print "elseeeeeeeeeeeeee"
                     self.sendMessage(f,temp)
-                else:
-                    print "WTF"  
+                    break
 
 
     def updateTables(self):
@@ -289,7 +298,7 @@ class node(object):
         #requests that were written from others in the nodes "shared memory")
         if len(self.inQueue) >0:
             request = self.inQueue.pop(0)
-            print "request", request
+            #print "request", request
             if request[0] not in self.statDict:
                 self.statDict[request[0]]=1
             else:
@@ -333,14 +342,6 @@ chord.assignFilesToNodes()
 
 chord.updateTables()
 
-#randomNodeId = choice(chord.getAliveNodes())
-#valia for debug start
-#for i in chord.nodeList:
-#    if i.nodeId == randomNodeId:
-#        randomNode = i
-#firstFingerTable = randomNode.getFingerTable()
-#print " FirstFingerTable = ", firstFingerTable
-#valia for debug end
 
 #gia na metrisoume to chain (posa hops ekane kathe minima)
 #tha stelnoume mia lista
@@ -349,23 +350,14 @@ requestList=powerlaw.rvs(1.65, size=1000, discrete=True,scale=chord.getMaxNodes(
  
 generatePLDistFile(args.N,requestList,chord.getMaxNodes())
 lst=[choice(chord.getNodeList()) for i in range(1,2)]
-#requestList=[[9,0],[9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7], [9,8],[9,9],[9,10], [9,11],[9,12],[9,13]]
 
-for j in range(0,16):
+for j in range(1,16):
+    print 'j', j
     for node in chord.getNodeList():
         node.writeToQueue([j,node.getNodeId()])
-#for (node,request) in zip(lst,requestList):
-    #node.writeToQueue([request,node.getNodeId()])
-
-#valia for debug start
-#for node in chord.getNodeList():
- #   if node.getNodeId() == 9:
-  #      node.writeToQueue([0,11])
-#valia for debug end
-
 
 counter=0
-while counter <10:
+while counter <1000:
     for node in chord.getNodeList():
         request=node.readFromQueue()
         if request==None:#no pending Requests in the i-nodes Queue

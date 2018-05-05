@@ -193,9 +193,13 @@ class Chord(object):
         elif f[0] == currentNode.getNodeId() or currentNode.isFileStoredLocally(f[0]):
                 print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
         else:
-            #only applicable for the first "route" of one request
-            if currentNode.getNodeId() not in f[1:]:
-                f.append(currentNode.getNodeId())
+            if currentNode.getNodeId() in f[2:]:
+                print f
+                print "Not able to find the requested file ",f[0], "from node ", currentNode.getNodeId()
+                return
+            else:
+                if currentNode.getNodeId()!=f[1]:
+                    f.append(currentNode.getNodeId())
 
             nextNode = self.findNextNode(f[0], currentNode)
             #print "next node",nextNode
@@ -207,12 +211,14 @@ class Chord(object):
                 return
 
             currentNode.increaseMessagesRouted()
-      
+
+
+
             for temp in self.nodeList:
-                #print "temp node = ", temp.getNodeId()
                 if nextNode[1]==temp.getNodeId():
                     self.sendMessage(f,temp)
                     break
+
 
 
     def updateTables(self):
@@ -347,7 +353,7 @@ chord.updateTables()
 #tha stelnoume mia lista
 
 requestList=powerlaw.rvs(1.65, size=1000, discrete=True,scale=chord.getMaxNodes())
- 
+
 generatePLDistFile(args.N,requestList,chord.getMaxNodes())
 lst=[choice(chord.getNodeList()) for i in range(1,2)]
 
@@ -356,16 +362,30 @@ for j in range(1,16):
     for node in chord.getNodeList():
         node.writeToQueue([j,node.getNodeId()])
 
-counter=0
-while counter <1000:
+for node in chord.getNodeList():
+    print node.inQueue
+#for (node,request) in zip(lst,requestList):
+    #node.writeToQueue([request,node.getNodeId()])
+
+#valia for debug start
+#for node in chord.getNodeList():
+ #   if node.getNodeId() == 9:
+  #      node.writeToQueue([0,11])
+#valia for debug end
+
+
+while True:
+    c=0
     for node in chord.getNodeList():
         request=node.readFromQueue()
         if request==None:#no pending Requests in the i-nodes Queue
-            continue
+            c+=1
         else:
-            #print "start node", node.getNodeId(), "looking for file", request
+            print "start node", node.getNodeId(), "looking for file", request
             chord.lookup(request,node.getNodeId())
-    counter+=1
+    if c==len(chord.getNodeList()):
+        break;
+
 
 for i in chord.getNodeList():
     print "\n\nNode: " + str(i.getNodeId())

@@ -148,14 +148,32 @@ class Chord(object):
        
     def findMaxIffSmaller(self, fingertable, f):
         maxAndLess = fingertable[-1]
-        for i in range(self.m-1,-1,-1):
+        changed = 0
+        values = [fingertable[i][1] for i in range(len(fingertable))]
+        somethingSmaller = min(values)
+        if f < somethingSmaller:
+            for i in range(self.m-1,-1,-1):
+            #print "node current in ft=",fingertable[i][0]
+                if fingertable[i][1] <= f:
+                #print "node current in ft=",fingertable[i][0] 
+                    maxAndLess = fingertable[i]
+                    changed = 1
+                    #print "maxAndLess=", maxAndLess
+        else: 
+            distance = [(abs(fingertable[i][1]-f), fingertable[i]) for i in range(len(fingertable))]
+            maxAndLess = min(distance, key=itemgetter(0))[1]
+        '''for i in range(self.m-1,-1,-1):
             #print "node current in ft=",fingertable[i][0]
             if fingertable[i][1] <= f:
                 #print "node current in ft=",fingertable[i][0] 
                 maxAndLess = fingertable[i]
+                changed = 1
                 #print "maxAndLess=", maxAndLess
-            if i == 0 and maxAndLess == fingertable[-1]:
-                maxAndLess = max(fingertable,key=itemgetter(1))
+            if changed == 0 and i == 0:
+                distance = [(abs(fingertable[i][1]-f), fingertable[i]) for i in range(len(fingertable))]
+                maxAndLess = min(distance, key=itemgetter(0))[1]
+                #maxAndLess = max(fingertable,key=itemgetter(1))'''
+                
                 #print "finally ", maxAndLess
         #print "finally finally", maxAndLess
         return maxAndLess
@@ -315,12 +333,16 @@ class node(object):
 
 
     def updateFingerTable(self, m, aliveNodes):
+        print aliveNodes        
+        print "for node", self.nodeId        
         for i in range (m):
+            
             fingerNode = pow(2,i) + self.nodeId
 
             while fingerNode > (pow(2, m) - 1):
-                fingerNode -= pow(2, m) - 1
-
+                fingerNode -= pow(2, m)
+            print "fingerNode", fingerNode
+                        
             if fingerNode in aliveNodes:
                 self.fingerTable.append([self.nodeId+pow(2,i),fingerNode])
 
@@ -330,10 +352,10 @@ class node(object):
                         self.fingerTable.append([self.nodeId+pow(2,i),aliveNodes[0]])
                         break
                     if j >= fingerNode:
+                        print "vazei j", j
                         self.fingerTable.append([self.nodeId+pow(2,i),j])
                         break
-
-
+        print self.fingerTable
 
 #executing script using --->python Chord.py --N <number>
 #if --N ... is not given, Chord DS will be initialized uning 10 nodes by default
@@ -372,7 +394,6 @@ for node in chord.getNodeList():
  #   if node.getNodeId() == 9:
   #      node.writeToQueue([0,11])
 #valia for debug end
-
 
 while True:
     c=0

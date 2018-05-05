@@ -1,0 +1,43 @@
+$ time python Chord.py --N 1000 --R 5000 | grep -c "Not able"
+0
+
+real	0m9.713s
+user	0m9.620s
+sys	0m0.120s
+
+##################################################################
+
+$ time python Chord.py --N 1000 --R 10000 | grep -c "Not able"
+0
+
+real	0m18.504s
+user	0m18.428s
+sys	0m0.116s
+
+###################################################################
+
+$ time python Chord.py --N 10000 --R 1000 | grep -c "Not able"
+0
+
+real	1m58.792s
+user	1m58.684s
+sys	0m0.108s
+
+####################################################################
+
+$ time python Chord.py --N 10000 --R 5000 | grep -c "Not able"
+0
+
+real	4m59.433s
+user	4m59.104s
+sys	0m0.336s
+
+#####################################################################
+
+$ time python Chord.py --N 10000 --R 10000 | grep -c "Not able"
+1
+
+real	8m2.743s
+user	8m2.052s
+sys	0m0.740s
+

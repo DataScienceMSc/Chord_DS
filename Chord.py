@@ -142,27 +142,16 @@ class Chord(object):
                if currentFingerTable[i][1] == f:
                 return currentFingerTable[i]
         if f < current.getNodeId():
-            return self.findMaxIffSmaller(currentFingerTable, f)
+            return self.findMaxIffSmaller(currentFingerTable, f, current)
         #print "max=", self.findMax(currentFingerTable, f)
         return self.findMax(currentFingerTable, f)
        
-    def findMaxIffSmaller(self, fingertable, f):
+
+    def findMaxIffSmaller(self, fingertable, f, node):
         maxAndLess = fingertable[-1]
         changed = 0
-        values = [fingertable[i][1] for i in range(len(fingertable))]
-        somethingSmaller = min(values)
-        if f < somethingSmaller:
-            for i in range(self.m-1,-1,-1):
-            #print "node current in ft=",fingertable[i][0]
-                if fingertable[i][1] <= f:
-                #print "node current in ft=",fingertable[i][0] 
-                    maxAndLess = fingertable[i]
-                    changed = 1
-                    #print "maxAndLess=", maxAndLess
-        else: 
-            distance = [(abs(fingertable[i][1]-f), fingertable[i]) for i in range(len(fingertable))]
-            maxAndLess = min(distance, key=itemgetter(0))[1]
-        '''for i in range(self.m-1,-1,-1):
+
+        for i in range(self.m-1,-1,-1):
             #print "node current in ft=",fingertable[i][0]
             if fingertable[i][1] <= f:
                 #print "node current in ft=",fingertable[i][0] 
@@ -170,9 +159,16 @@ class Chord(object):
                 changed = 1
                 #print "maxAndLess=", maxAndLess
             if changed == 0 and i == 0:
-                distance = [(abs(fingertable[i][1]-f), fingertable[i]) for i in range(len(fingertable))]
-                maxAndLess = min(distance, key=itemgetter(0))[1]
-                #maxAndLess = max(fingertable,key=itemgetter(1))'''
+                print 'fingertable' , fingertable
+                distance = [(abs(fingertable[i][1]-f), fingertable[i]) for i in range(len(fingertable)) if fingertable[i][0] < chord.getMaxNodes()]
+                if distance:
+                    print "if distance"
+                    maxAndLess = min(distance, key=itemgetter(0))[1]
+                else:
+                    print "else distance"
+                    maxAndLess = min(fingertable, key=itemgetter(1))
+                    print maxAndLess
+                #maxAndLess = max(fingertable,key=itemgetter(1))
                 
                 #print "finally ", maxAndLess
         #print "finally finally", maxAndLess
@@ -213,7 +209,7 @@ class Chord(object):
         else:
             if currentNode.getNodeId() in f[2:]:
                 print f
-                print "Not able to find the requested file ",f[0], "from node ", currentNode.getNodeId()
+                print "Not able to find the requested file ",f[0], "from node ", currentNode.getNodeId(), "with ft ", currentNode.getFingerTable()
                 return
             else:
                 if currentNode.getNodeId()!=f[1]:
@@ -224,7 +220,7 @@ class Chord(object):
             #if the file has been routed this way before,
             #do not try routing again.
             if nextNode in f[1:]:
-                print "Not able to find the requested file",f[0]
+                print "Not able to find the requested file",f[0], "by node ", nextNode, "with ft ", nextNode.getFingerTable()
                 #nextNode = currentNode.getSuccessor()
                 return
 
@@ -402,7 +398,7 @@ while True:
         if request==None:#no pending Requests in the i-nodes Queue
             c+=1
         else:
-            print "start node", node.getNodeId(), "looking for file", request
+            print "start node", node.getNodeId(), "looking for file", request , "with ft", node.getFingerTable()
             chord.lookup(request,node.getNodeId())
     if c==len(chord.getNodeList()):
         break;

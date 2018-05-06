@@ -195,8 +195,9 @@ class Chord(object):
                 currentNode = i
 
         currentFingerTable = currentNode.getFingerTable()
-
-        if f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
+        if f[0] > currentNode.getPredecessor() and currentNode.getNodeId()< currentNode.getPredecessor():
+            print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
+        elif f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
             print "File: " + str(f[0]) + " served by node: "+ str(successor)
         elif f[0] == currentNode.getNodeId() or currentNode.isFileStoredLocally(f[0]):

@@ -138,18 +138,20 @@ class Chord(object):
         currentFingerTable=current.getFingerTable()
         for i in range(self.m-1, -1, -1):
                if currentFingerTable[i][1] == f:
+                print "1"
                 return currentFingerTable[i]
 
         if f < current.getNodeId():
+            print "2"
             return self.findMaxIffSmaller(currentFingerTable, f, current)
-
+        print "3"
         return self.findMax(currentFingerTable, f)
 
 
     def findMaxIffSmaller(self, fingertable, f, node):
         maxAndLess = fingertable[-1]
         changed = 0
-
+        
         for i in range(self.m-1,-1,-1):
             if fingertable[i][1] <= f:
                 maxAndLess = fingertable[i]
@@ -168,6 +170,12 @@ class Chord(object):
 
     def findMax(self, fingertable, f):
         maxAndLess = fingertable[0]
+        print "here"
+        for i in range(self.m-1,-1,-1):
+            print "in my if"
+            if fingertable[i][0]==f:
+                print "returning...", fingertable[i]
+                return fingertable[i]
 
         for i in range(self.m-1,-1,-1):
             if fingertable[i][1] > maxAndLess[1] and fingertable[i][1] <= f:
@@ -200,7 +208,7 @@ class Chord(object):
             else:
                 if currentNode.getNodeId()!=f[1]:
                     f.append(currentNode.getNodeId())
-
+            print "finding next node"
             nextNode = self.findNextNode(f[0], currentNode)
             #if the file has been routed this way before,
             #do not try routing again.
@@ -335,7 +343,7 @@ class node(object):
 #if --N ... is not given, Chord DS will be initialized uning 10 nodes by default
 
 parser=argparse.ArgumentParser("Please give number of nodes for the Chord system:")
-parser.add_argument("--N","--n", type=int, help="Number of nodes present in the distributed system", default=10)
+parser.add_argument("--N","--n", type=int, help="Number of nodes present in the distributed system", default=100)
 parser.add_argument("--R","--r", type=int, help="Number of requests. (default 1000)", default=1000)
 args=parser.parse_args()
 print "Given N: ", args.N
@@ -351,6 +359,7 @@ requestList=powerlaw.rvs(1.65, size=args.R, discrete=True,scale=chord.getMaxNode
 generatePLDistFile(args.N,requestList,chord.getMaxNodes())
 lst=[choice(chord.getNodeList()) for i in range(0,args.R)]
 
+print chord.getAliveNodes()
 for (node,request) in zip(lst,requestList):
     node.writeToQueue([request,node.getNodeId()])
 

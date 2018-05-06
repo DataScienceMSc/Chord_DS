@@ -11,8 +11,6 @@ from scipy.stats import powerlaw
 #*************************************************************************************************
 #**********************************GENERIC FUNCTIONS**********************************************
 #*************************************************************************************************
-
-
 # Prints to a file all the requested fileIds, along with the times
 #each file id was requested.
 def generatePLDistFile(N,requestList,maxNodes):
@@ -98,9 +96,26 @@ def generateRandomIPsAndPorts(N,maxNodes):
 #*************************************************************************************************
 class Chord(object):
     def __init__(self, N):
+	self.requests=requests
         self.m,self.maxNodes=findMaxNodesPossible(N)
 	self.nodeList=randomNodeGenerator(N,self.maxNodes)
 	self.aliveNodes=[i.getNodeId() for i in self.nodeList]
+        self.reqDict={}
+
+
+    def updateAvgHopForFile(self,f):
+        if f[0] in self.reqDict:
+            self.reqDict[f[0]]=(self.reqDict[f[0]]+len(f[1:]))/2
+        else:
+            self.reqDict[f[0]]=len(f[1:])
+
+
+    def writeReqDictCSV(self):
+        filename="hops_MaxNodes:"+str(self.maxNodes)+"_requests:"+str(reque.csv"
+        with open(filename, 'wb') as f:
+	    f.write("File,Average Path Length\n")
+            [f.write('{0},{1}\n'.format(key, value)) for key, value in self.reqDict.items()]
+        f.close()
 
 
     def getMaxNodes(self):
@@ -138,20 +153,17 @@ class Chord(object):
         currentFingerTable=current.getFingerTable()
         for i in range(self.m-1, -1, -1):
                if currentFingerTable[i][1] == f:
-                print "1"
                 return currentFingerTable[i]
 
         if f < current.getNodeId():
-            print "2"
             return self.findMaxIffSmaller(currentFingerTable, f, current)
-        print "3"
         return self.findMax(currentFingerTable, f)
 
 
     def findMaxIffSmaller(self, fingertable, f, node):
         maxAndLess = fingertable[-1]
         changed = 0
-        
+
         for i in range(self.m-1,-1,-1):
             if fingertable[i][1] <= f:
                 maxAndLess = fingertable[i]
@@ -170,11 +182,8 @@ class Chord(object):
 
     def findMax(self, fingertable, f):
         maxAndLess = fingertable[0]
-        print "here"
         for i in range(self.m-1,-1,-1):
-            print "in my if"
             if fingertable[i][0]==f:
-                print "returning...", fingertable[i]
                 return fingertable[i]
 
         for i in range(self.m-1,-1,-1):
@@ -197,11 +206,14 @@ class Chord(object):
         currentFingerTable = currentNode.getFingerTable()
         if f[0] > currentNode.getPredecessor() and currentNode.getNodeId()< currentNode.getPredecessor():
             print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
+            self.updateAvgHopForFile(f)
         elif f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
-            print "File: " + str(f[0]) + " served by node: "+ str(successor)
+            print "File: " + str(f) + " served by node: "+ str(successor)
+            self.updateAvgHopForFile(f)
         elif f[0] == currentNode.getNodeId() or currentNode.isFileStoredLocally(f[0]):
-                print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
+            print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
+            self.updateAvgHopForFile(f)
         else:
             if currentNode.getNodeId() in f[2:]:
                 print "Not able to find the requested file ",f[0], "from node ", currentNode.getNodeId(), "with ft ", currentNode.getFingerTable()
@@ -209,7 +221,6 @@ class Chord(object):
             else:
                 if currentNode.getNodeId()!=f[1]:
                     f.append(currentNode.getNodeId())
-            print "finding next node"
             nextNode = self.findNextNode(f[0], currentNode)
             #if the file has been routed this way before,
             #do not try routing again.
@@ -350,7 +361,7 @@ args=parser.parse_args()
 print "Given N: ", args.N
 print "Number of requests: ",args.R
 
-chord=Chord(args.N-1)
+chord=Chord(args.N-1,args.R)
 chord.assignFilesToNodes()
 
 chord.updateTables()
@@ -367,7 +378,6 @@ for (node,request) in zip(lst,requestList):
 while True:
     c=0
     for node in chord.getNodeList():
-        print "node ", node.getNodeId()
         request=node.readFromQueue()
         if request==None:#no pending Requests in the i-nodes Queue
             c+=1
@@ -377,6 +387,14 @@ while True:
     if c==len(chord.getNodeList()):
         break;
 
+
+filename="load_"+str(chord.getMaxNodes())+".csv"
+with open(filename,'wb') as f:
+	f.write("NodeId,Messages Routed,Requests Served\n")
+	for i in chord.getNodeList():
+            line=str(i.getNodeId())+","+str(i.getMessagesRouted())+","+str(i.getMessagesServed())+"\n"
+	    f.write(line)
+
 for i in chord.getNodeList():
     print "\n\nNode: " + str(i.getNodeId())
     print "*************"
@@ -384,3 +402,7 @@ for i in chord.getNodeList():
     print "File Requests Served: " + str(i.getMessagesServed())
     print "Popularity dictionary: ", i.getStatDict()
     print "Node Can serve: ", i.getFileList()
+
+
+
+chord.writeReqDictCSV()

@@ -36,7 +36,7 @@ def findMaxNodesPossible(N):
         m+=1
         maxNodes= maxNodes*2
         if maxNodes >= N:
-            print "Chord with m=", m ,"and maximum possible nodes: ", maxNodes
+            #print "Chord with m=", m ,"and maximum possible nodes: ", maxNodes
             return m,maxNodes
 
 
@@ -187,17 +187,22 @@ class Chord(object):
         currentFingerTable = currentNode.getFingerTable()
         if f[0] > currentNode.getPredecessor() and currentNode.getNodeId()< currentNode.getPredecessor():
             print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
+            currentNode.increaseMessagesServed()
             self.updateAvgHopForFile(f)
         elif f[0] > currentNode.getNodeId() and f[0] <= currentFingerTable[0][1]:
             successor = currentFingerTable[0][1]
+            for i in self.nodeList:
+                if str(i.getNodeId())==str(successor):
+                    i.increaseMessagesServed()
             print "File: " + str(f) + " served by node: "+ str(successor)
             self.updateAvgHopForFile(f)
         elif f[0] == currentNode.getNodeId() or currentNode.isFileStoredLocally(f[0]):
+            currentNode.increaseMessagesServed()
             print "File: " + str(f) + " served by node: "+ str(currentNode.getNodeId())
             self.updateAvgHopForFile(f)
         else:
             if currentNode.getNodeId() in f[2:]:
-                print "Not able to find the requested file ",f[0], "from node ", currentNode.getNodeId(), "with ft ", currentNode.getFingerTable()
+                #print "Not able to find the requested file ",f[0], "from node ", currentNode.getNodeId(), "with ft ", currentNode.getFingerTable()
                 return
             else:
                 if currentNode.getNodeId()!=f[1]:
@@ -206,7 +211,7 @@ class Chord(object):
             #if the file has been routed this way before,
             #do not try routing again.
             if nextNode in f[1:]:
-                print "Not able to find the requested file",f[0], "by node ", nextNode, "with ft ", nextNode.getFingerTable()
+                #print "Not able to find the requested file",f[0], "by node ", nextNode, "with ft ", nextNode.getFingerTable()
                 return
 
             currentNode.increaseMessagesRouted()
@@ -339,8 +344,8 @@ parser=argparse.ArgumentParser("Please give number of nodes for the Chord system
 parser.add_argument("--N","--n", type=int, help="Number of nodes present in the distributed system", default=100)
 parser.add_argument("--R","--r", type=int, help="Number of requests. (default 1000)", default=1000)
 args=parser.parse_args()
-print "Given N: ", args.N
-print "Number of requests: ",args.R
+#print "Given N: ", args.N
+#print "Number of requests: ",args.R
 
 chord=Chord(args.N-1,args.R)
 chord.assignFilesToNodes()
@@ -351,7 +356,7 @@ requestList=powerlaw.rvs(1.65, size=args.R, discrete=True,scale=chord.getMaxNode
 
 lst=[choice(chord.getNodeList()) for i in range(0,args.R)]
 
-print chord.getAliveNodes()
+#print chord.getAliveNodes()
 for (node,request) in zip(lst,requestList):
     node.writeToQueue([request,node.getNodeId()])
 
@@ -362,7 +367,7 @@ while True:
         if request==None:#no pending Requests in the i-nodes Queue
             c+=1
         else:
-            print "start node", node.getNodeId(), "looking for file", request , "with ft", node.getFingerTable()
+            #print "start node", node.getNodeId(), "looking for file", request , "with ft", node.getFingerTable()
             chord.lookup(request,node.getNodeId())
     if c==len(chord.getNodeList()):
         break;
@@ -379,13 +384,13 @@ with open(filename,'a') as f:
 
 sumOfMessagesRouted=0
 for i in chord.getNodeList():
-    print "\n\nNode: " + str(i.getNodeId())
-    print "*************"
-    print "Messages Routed: "+ str(i.getMessagesRouted())
+    #print "\n\nNode: " + str(i.getNodeId())
+    #print "*************"
+    #print "Messages Routed: "+ str(i.getMessagesRouted())
     sumOfMessagesRouted+=i.getMessagesRouted()
-    print "File Requests Served: " + str(i.getMessagesServed())
-    print "Popularity dictionary: ", i.getStatDict()
-    print "Node Can serve: ", i.getFileList()
+    #print "File Requests Served: " + str(i.getMessagesServed())
+    #print "Popularity dictionary: ", i.getStatDict()
+    #print "Node Can serve: ", i.getFileList()
 
 
 filename="sumOfMessagesRouted_"+"MaxNodes:"+str(chord.getMaxNodes())+"_requests:" +str(args.R)+".csv"

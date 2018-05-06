@@ -12,30 +12,6 @@ from scipy.stats import powerlaw
 #*************************************************************************************************
 #**********************************GENERIC FUNCTIONS**********************************************
 #*************************************************************************************************
-# Prints to a file all the requested fileIds, along with the times
-#each file id was requested.
-def generatePLDistFile(N,requestList,maxNodes):
-    filename="requests_"+str(N)
-
-    if os.path.exists(filename+".txt"):
-        i=1
-        while True:
-            temp_filename=filename+"_("+str(i)+")"
-            if not os.path.exists(temp_filename+".txt"):
-                filename=temp_filename
-                break
-            i+=1
-
-    filename+=".txt"
-
-    with open(filename, 'a') as the_file:
-        the_file.write('Using popularity distribution from\n')
-        the_file.write('scipy.stats to generate request for file Ids.\n')
-        for i in range(0,maxNodes):
-            the_file.write("Movie with id: "+str(i)+" appears "+str(list(requestList).count(i))+" times\n")
-    the_file.close()
-
-
 
 def randomNodeGenerator(N,maxNodes):
     randomIpsAndPorts=generateRandomIPsAndPorts(N,maxNodes)
@@ -137,7 +113,6 @@ class Chord(object):
     #finds the node responsible for a fileId
         i=0
         while i<pow(2,self.m):
-            print "loop"
             for counter,node in enumerate(self.nodeList):
                 if node.getNodeId() >= i:
                     self.nodeList[counter].storeFileToNode(i)
@@ -374,7 +349,6 @@ chord.updateTables()
 
 requestList=powerlaw.rvs(1.65, size=args.R, discrete=True,scale=chord.getMaxNodes())
 
-generatePLDistFile(args.N,requestList,chord.getMaxNodes())
 lst=[choice(chord.getNodeList()) for i in range(0,args.R)]
 
 print chord.getAliveNodes()

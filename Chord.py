@@ -2,6 +2,7 @@ import argparse
 from random import randrange
 from random import choice
 import os.path
+import os
 from random import randint
 import hashlib
 from operator import itemgetter
@@ -13,6 +14,14 @@ from scipy.stats import powerlaw
 #*************************************************************************************************
 # Prints to a file all the requested fileIds, along with the times
 #each file id was requested.
+def maxNodeRange(maxNodes):
+    n = 0
+    while n<maxNodes:
+        yield n
+        n += 1
+    n=0
+
+
 def generatePLDistFile(N,requestList,maxNodes):
     filename="requests_"+str(N)
 
@@ -31,7 +40,7 @@ def generatePLDistFile(N,requestList,maxNodes):
         the_file.write('Using popularity distribution from\n')
         the_file.write('scipy.stats to generate request for file Ids.\n')
         for i in range(0,maxNodes):
-            the_file.write("Movie with id: "+str(i)+"appears "+str(list(requestList).count(i))+" times\n")
+            the_file.write("Movie with id: "+str(i)+" appears "+str(list(requestList).count(i))+" times\n")
     the_file.close()
 
 
@@ -52,15 +61,16 @@ def randomNodeGenerator(N,maxNodes):
 
 
 def findMaxNodesPossible(N):
-    maxNodes=1
-    m=0
+    maxNodes=pow(2,160)
+    m=160
+    return m,maxNodes
 
-    while True:
-        m+=1
-        maxNodes= maxNodes*2
-        if maxNodes >= N:
-            print "Chord with m=", m ,"and maximum possible nodes: ", maxNodes
-            return m,maxNodes
+#    while True:
+#        m+=1
+#        maxNodes= maxNodes*2
+#        if maxNodes >= N:
+#            print "Chord with m=", m ,"and maximum possible nodes: ", maxNodes
+#            return m,maxNodes
 
 
 
@@ -95,7 +105,7 @@ def generateRandomIPsAndPorts(N,maxNodes):
 #**********************************CHORD FUNCTIONS************************************************
 #*************************************************************************************************
 class Chord(object):
-    def __init__(self, N):
+    def __init__(self, N, requests):
 	self.requests=requests
         self.m,self.maxNodes=findMaxNodesPossible(N)
 	self.nodeList=randomNodeGenerator(N,self.maxNodes)
@@ -111,9 +121,12 @@ class Chord(object):
 
 
     def writeReqDictCSV(self):
-        filename="hops_MaxNodes:"+str(self.maxNodes)+"_requests:"+str(reque.csv"
-        with open(filename, 'wb') as f:
-	    f.write("File,Average Path Length\n")
+        filename="hops_MaxNodes:"+str(self.maxNodes)+"_requests:"+str(self.requests)+".csv"
+
+        with open(filename, 'a') as f:
+	    exists=os.stat(filename).st_size
+	    if not exists:
+	    	f.write("File,Average Path Length\n")
             [f.write('{0},{1}\n'.format(key, value)) for key, value in self.reqDict.items()]
         f.close()
 
@@ -131,7 +144,8 @@ class Chord(object):
 
     def assignFilesToNodes(self):
     #finds the node responsible for a fileId
-        for i in range(pow(2,self.m)):
+        #for i in range(pow(2,self.m)):
+        for i in maxNodeRange(pow(2,self.m)):
             for counter,node in enumerate(self.nodeList):
                 if node.getNodeId() >= i:
                     self.nodeList[counter].storeFileToNode(i)
@@ -388,21 +402,33 @@ while True:
         break;
 
 
-filename="load_"+str(chord.getMaxNodes())+".csv"
-with open(filename,'wb') as f:
-	f.write("NodeId,Messages Routed,Requests Served\n")
-	for i in chord.getNodeList():
-            line=str(i.getNodeId())+","+str(i.getMessagesRouted())+","+str(i.getMessagesServed())+"\n"
-	    f.write(line)
+filename="load_"+"MaxNodes:"+str(chord.getMaxNodes())+"_requests:" +str(args.R)+".csv"
+with open(filename,'a') as f:
+    exists=os.stat(filename).st_size
+    if not exists:
+        f.write("NodeId,Messages Routed,Requests Served\n")
+    for i in chord.getNodeList():
+        line=str(i.getNodeId())+","+str(i.getMessagesRouted())+","+str(i.getMessagesServed())+"\n"
+        f.write(line)
 
+sumOfMessagesRouted=0
 for i in chord.getNodeList():
     print "\n\nNode: " + str(i.getNodeId())
     print "*************"
     print "Messages Routed: "+ str(i.getMessagesRouted())
+    sumOfMessagesRouted+=i.getMessagesRouted()
     print "File Requests Served: " + str(i.getMessagesServed())
     print "Popularity dictionary: ", i.getStatDict()
     print "Node Can serve: ", i.getFileList()
 
+
+filename="sumOfMessagesRouted_"+"MaxNodes:"+str(chord.getMaxNodes())+"_requests:" +str(args.R)+".csv"
+with open(filename,'a') as f:
+    exists=os.stat(filename).st_size
+    if not exists:
+        f.write("Sum of messages Routed\n")
+    line=str(sumOfMessagesRouted)+"\n"
+    f.write(line)
 
 
 chord.writeReqDictCSV()

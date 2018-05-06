@@ -14,14 +14,6 @@ from scipy.stats import powerlaw
 #*************************************************************************************************
 # Prints to a file all the requested fileIds, along with the times
 #each file id was requested.
-def maxNodeRange(maxNodes):
-    n = 0
-    while n<maxNodes:
-        yield n
-        n += 1
-    n=0
-
-
 def generatePLDistFile(N,requestList,maxNodes):
     filename="requests_"+str(N)
 
@@ -61,16 +53,15 @@ def randomNodeGenerator(N,maxNodes):
 
 
 def findMaxNodesPossible(N):
-    maxNodes=pow(2,160)
-    m=160
-    return m,maxNodes
+    m=0
+    maxNodes=1
 
-#    while True:
-#        m+=1
-#        maxNodes= maxNodes*2
-#        if maxNodes >= N:
-#            print "Chord with m=", m ,"and maximum possible nodes: ", maxNodes
-#            return m,maxNodes
+    while True:
+        m+=1
+        maxNodes= maxNodes*2
+        if maxNodes >= N:
+            print "Chord with m=", m ,"and maximum possible nodes: ", maxNodes
+            return m,maxNodes
 
 
 
@@ -144,8 +135,9 @@ class Chord(object):
 
     def assignFilesToNodes(self):
     #finds the node responsible for a fileId
-        #for i in range(pow(2,self.m)):
-        for i in maxNodeRange(pow(2,self.m)):
+        i=0
+        while i<pow(2,self.m):
+            print "loop"
             for counter,node in enumerate(self.nodeList):
                 if node.getNodeId() >= i:
                     self.nodeList[counter].storeFileToNode(i)
@@ -154,7 +146,7 @@ class Chord(object):
                 if i > (self.nodeList[-1]):
                     self.nodeList[0].storeFileToNode(i)
                     break
-
+            i+=1
 
 
     def findNextNode(self, f, current):
